@@ -10,6 +10,11 @@ data Valor = Uno | Dos | Tres | Cuatro | Cinco | Seis | Siete | Ocho | Nueve | D
 data Carta = Carta Valor Palo deriving (Eq)
 
 type Mazo = [Carta]
+type Mano = [Carta]
+
+type Repartir = Mazo -> (Carta, Mazo)
+data Jugador = Jugador { nombre :: String, mano :: Mano } deriving (Show)
+
 
 --Se asignan simbolo ASCII a cada palo 
 instance Show Palo where
@@ -33,3 +38,29 @@ instance Show Carta where
     show (Carta Once palo)  = "11" ++ show palo
     show (Carta Doce palo) = "12" ++ show palo
 
+nuevoMazo :: Mazo
+nuevoMazo = [Carta p n | n <- [Treboles .. ], p <- [As ..]]
+
+
+nuevoJugador :: String -> Jugador
+nuevoJugador nombre = Jugador nombre []
+
+-- Hacer funcion para mezclar cartas
+
+-- Repartir cartas
+repartir :: Repartir
+repartir [] = error "Empty deck"
+repartir (x:xs) = (x, xs)
+
+repartirCartaAJugador :: Mazo -> Jugador -> (Mazo, Jugador)
+repartirCartaAJugador [] _ = error "Mazo Vacio"
+repartirCartaAJugador m (Jugador nombre mano) = let (carta, m') = repartir m
+                                                 in (m', Jugador nombre (carta:mano))
+
+repartirNCartasAJugador :: Int -> Mazo -> Jugador -> (Mazo, Jugador)
+repartirNCartasAJugador n m j
+    | n > length m  = error "No hay cartas suficientes"
+    | n < 1         = error "Debes repartir por lo menos 1 carta"
+    | n == 1        = repartirCartaAJugador m j
+    | otherwise     = repartirNCartasAJugador (n - 1) m' j' 
+        where (m', j') = repartirCartaAJugador m j
