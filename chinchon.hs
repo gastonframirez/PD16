@@ -39,7 +39,7 @@ instance Show Carta where
     show (Carta Doce palo) = "12" ++ show palo
 
 nuevoMazo :: Mazo
-nuevoMazo = [Carta p n | n <- [Treboles .. ], p <- [Uno ..]]
+nuevoMazo = [Carta n p | p <- [Treboles .. ], n <- [Uno .. ]]
 
 
 nuevoJugador :: String -> Jugador
@@ -49,7 +49,7 @@ nuevoJugador nombre = Jugador nombre []
 
 -- Repartir cartas
 repartir :: Repartir
-repartir [] = error "Empty deck"
+repartir [] = error "Mazo Vacio"
 repartir (x:xs) = (x, xs)
 
 repartirCartaAJugador :: Mazo -> Jugador -> (Mazo, Jugador)
