@@ -34,3 +34,9 @@ instance Show Carta where
     show (Carta Reina palo) = "Q" ++ show palo
     show (Carta Rey palo)  = "K" ++ show palo
 
+nuevoMazo :: Mazo
+nuevoMazo = [Carta p n | n <- [Treboles .. ], p <- [As ..]]
+
+-- Hacer funcion para mezclar cartas
+
+-- Hacer funcion para repartir cartas
