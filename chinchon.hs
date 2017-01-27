@@ -39,7 +39,7 @@ instance Show Carta where
     show (Carta Doce palo) = "12" ++ show palo
 
 nuevoMazo :: Mazo
-nuevoMazo = [Carta p n | n <- [Treboles .. ], p <- [As ..]]
+nuevoMazo = [Carta p n | n <- [Treboles .. ], p <- [Uno ..]]
 
 
 nuevoJugador :: String -> Jugador
