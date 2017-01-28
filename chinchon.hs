@@ -11,10 +11,13 @@ data Carta = Carta Valor Palo deriving (Eq)
 
 type Mazo = [Carta]
 type Mano = [Carta]
+type Seguras = [Carta]
+type SemiSeguras = [Carta]
 
 type Repartir = Mazo -> (Carta, Mazo)
-data Jugador = Jugador { nombre :: String, mano :: Mano } deriving (Show)
+data Jugador = Jugador { nombre :: String, mano :: Mano, seguras :: Seguras, semiSeguras ::SemiSeguras} deriving (Show)
 
+type EstadoDeJuego = (Jugador, Jugador, Mazo, Mazo)
 
 --Se asignan simbolo ASCII a cada palo 
 instance Show Palo where
@@ -54,8 +57,8 @@ repartir (x:xs) = (x, xs)
 
 repartirCartaAJugador :: Mazo -> Jugador -> (Mazo, Jugador)
 repartirCartaAJugador [] _ = error "Mazo Vacio"
-repartirCartaAJugador m (Jugador nombre mano) = let (carta, m') = repartir m
-                                                 in (m', Jugador nombre (carta:mano))
+repartirCartaAJugador m (Jugador nombre mano [] []) = let (carta, m') = repartir m
+                                                 in (m', Jugador nombre (carta:mano) [] [])
 
 repartirNCartasAJugador :: Int -> Mazo -> Jugador -> (Mazo, Jugador)
 repartirNCartasAJugador n m j
@@ -64,3 +67,12 @@ repartirNCartasAJugador n m j
     | n == 1        = repartirCartaAJugador m j
     | otherwise     = repartirNCartasAJugador (n - 1) m' j' 
         where (m', j') = repartirCartaAJugador m j
+        
+jugadaCompu :: EstadoDeJuego -> EstadoDeJuego
+-- buscar escalera (mismo palo) 1º 4, 2º 3 (para ponerlo en seguras)
+
+-- buscar mismo numero 1º 4, 2º 3 (para ponerlo en seguras)
+
+-- igual que lo anterior, pero para 2 cartas
+
+
