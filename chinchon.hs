@@ -76,3 +76,58 @@ jugadaCompu :: EstadoDeJuego -> EstadoDeJuego
 -- igual que lo anterior, pero para 2 cartas
 
 
+
+
+-- Obtener por palo
+obtenerPorPalo :: Palo -> [Carta] -> [Carta]
+obtenerPorPalo paloParam cartas = filter (\carta -> palo carta == paloParam) cartas
+
+-- supone que todas son del mismo Palo
+tieneNSuc :: [Carta] -> Int -> Bool
+tieneNSuc [] _ = False
+tieneNSuc _ 0 = False
+tieneNSuc (x:xs) 1 = True
+tieneNSuc l b | b > length l = False
+tieneNSuc (x:y:zs) b | valor y == succ (valor x) =  tieneNSuc (y:zs) (b-1)
+tieneNSuc (x:y:zs) b | valor y ==  valor x = False
+tieneNSuc (x:y:zs) b | valor y < valor x = True
+
+-- supone todas las cartas del mismo Palo
+esChinchon :: [Carta] -> Bool
+esChinchon cartas =	tieneNSuc cartas 7
+
+
+-- ordernar cartas (supone del mismo Palo)
+ordenarCartasNumero :: [Carta] -> [Carta]
+ordernarCartasNumero [] = []
+ordenarCartas = sortBy (comparing valor)
+
+--
+ordenarCartasPalo :: [Carta] -> [Carta]
+ordenarCartasPalo = sortBy (comparing palo)
+
+-- ordena todas cartas 
+ordenarTodasCartas :: [Carta] -> [Carta]
+ordenarTodasCartas cartas = ordenarCartasPalo (ordenarCartasNumero cartas)
+
+-- igual que lo anterior, pero para 2 cartas
+cartasEnGrupo :: [Carta] -> Bool
+cartasEnGrupo [(Carta r1 _), (Carta r2 _), (Carta r3 _)] = r1 == r2 && r1 == r3
+cartasEnGrupo [(Carta r1 _), (Carta r2 _), (Carta r3 _), (Carta r4 _)] = r1 == r2 && r1 == r3 && r1 == r4
+cartasEnGrupo _ = False
+
+
+-- Secuencia
+cartasEnSecuencia :: [Carta] -> Bool
+cartasEnSecuencia [(Carta r1 s1), (Carta r2 s2), (Carta r3 s3)] = mismoPalo && enSecuencia
+        where 
+            mismoPalo = s1 == s2 && s1 == s3
+            enSecuencia = ordenado !! 0 + 1 == ordenado !! 1 && ordenado !! 1 + 1 == ordenado !! 2
+            ordenado = map fromEnum $ sort [r1, r2, r3]
+cartasEnSecuencia [(Carta r1 s1), (Carta r2 s2), (Carta r3 s3), (Carta r4 s4)] = mismoPalo && enSecuencia
+        where 
+            mismoPalo = s1 == s2 && s1 == s3 && s1 == s4
+            enSecuencia = ordenado !! 0 + 1 == ordenado !! 1 && ordenado !! 1 + 1 == ordenado !! 2 && ordenado !! 2 + 1 == ordenado !! 3
+            ordenado = map fromEnum $ sort [r1, r2, r3, r4]
+cartasEnSecuencia _ = False
+
