@@ -1,6 +1,6 @@
 module Chinchon where
 
-import Data.List (sort, permutations, tails, (\\), sortBy)
+import Data.List (sort, permutations, tails, (\\), sortBy, union)
 import Data.Ord (comparing)
 import System.Random
 import Data.Array.ST
@@ -57,7 +57,7 @@ nuevoMazo = [Carta n p | p <- [Treboles .. ], n <- [Uno .. ]]
 nuevoJugador :: String -> Jugador
 nuevoJugador nombre = Jugador nombre [] [] []
 
--- Mezclar cartas
+-- Mezclar cartas, sacado de un repositorio para mayor eficiencia
 shuffle' :: [a] -> StdGen -> ([a],StdGen)
 shuffle' xs gen = runST (do
 				g <- newSTRef gen
@@ -209,41 +209,90 @@ cartasEnSecuencia [(Carta n1 p1), (Carta n2 p2), (Carta n3 p3), (Carta n4 p4)] =
             ordenado = map fromEnum $ sort [n1, n2, n3,n4]
 cartasEnSecuencia _ = False
 
---esBuenaCarta :: Carta -> [Carta] -> [Carta]
---esBuenaCarta carta mano = do
---	let mano' = mano ++ [carta]
---	let mano'' = ordenarCartasPalo mano'
---	let manoOrd =  ordenarCartasNumero mano'
---	if not (esChinchon mano'')
---	then if not (cartasEnSecuencia mano'')
---		then manoOrd
---		else mano''
---	else mano''
-    
---esBuenaCarta :: Carta -> Jugador -> Bool
---esBuenaCarta carta (Jugador nombre mano s ss) = do
---	let mano' = mano ++ [carta]
+esSemiSegura :: [Carta] -> Bool
+esSemiSegura cartas = esSemiSeguraPalo cartas || esSemiSeguraNumero cartas
+
+esSemiSeguraPalo :: [Carta] -> Bool
+esSemiSeguraPalo cartas = do
+	let cartas' = ordenarCartasNumero cartas
+	tieneNSuc cartas' 2 
+
+esSemiSeguraNumero :: [Carta] -> Bool
+esSemiSeguraNumero [(Carta n1 _), (Carta n2 _)] = n1 == n2
+
+
+removeItem _ []                 = []
+removeItem x (y:ys) | x == y    = removeItem x ys
+					| otherwise = y : removeItem x ys
 
 jugadaComputadora :: EstadoDeJuego -> EstadoDeJuego
 jugadaComputadora estado@(jugador, (Jugador nombre mano seguras ss), mazo, pilaDescartadas) = do
 -- 	VER SI LA DE DESCARTADA SIRVE
-    let mano' = [(ultimaCartaDescartada pilaDescartadas)] ++ mano
-    if length [cuatro | cuatro <- combinaciones 4 mano'\\(combinaciones 3 seguras), esBuena cuatro] >=1
-    then do
-        let seguras' = seguras ++ [(ultimaCartaDescartada pilaDescartadas)]
-        let computadora' = (Jugador nombre mano' seguras' ss)
-        let manoAux = -- TODAS LAS QUE NO ESTAN EN SEGURAS Y SS
-        -- if length manoAux >0
---		then SACAR UNA (EN LO POSIBLE LA MAS GRANDE) y poner el resto en mano''
---		else SACAR LA QUE MENOS INFLUENCIA DE SEMISEGURAS (SUMAR LAS CARTAS Y SACAR DE LA QUE DE MAS GRANDE)
---		let mano'' = seguras ++ ss
-        (jugador, computadora', mazo, tail pilaDescartadas)
-    else estado
-    -- SI HAY, AGREGAR LA CARTA A SEGURAS
-    
---	[tres | tres <- combinaciones 3 mano'\\(combinaciones 3 (seguras computadora)), esBuena tres]
-    --	(pilaDescartadas', computadora') = repartirCartaAJugador pilaDescartadas computadora
---	
+    let cDescartada = (ultimaCartaDescartada pilaDescartadas)
+	let mano' = [cDescartada] ++ mano
+	let pilaDescartadas' = tail pilaDescartadas
+	if length [cuatro | cuatro <- combinaciones 4 mano'\\(combinaciones 3 seguras), esBuena cuatro] >=1
+	then do
+		let seguras' = seguras ++ [cDescartada]
+		let computadora' = (Jugador nombre mano' seguras' ss)
+		let sobrantes = [carta | carta <- mano', carta `notElem` (seguras' `union` ss)] -- TODAS LAS QUE NO ESTAN EN SEGURAS Y SS
+		if length sobrantes > 0
+		then do
+			let cartasOrdenadas = ordenarCartasNumero sobrantes
+			let descartada = last (cartasOrdenadas) --SACAR UNA (EN LO POSIBLE LA MAS GRANDE)
+			let mano'' = init (cartasOrdenadas) ++ seguras' ++ ss  -- y poner el resto en mano''
+			let pilaDescartadas'' = [descartada] ++ pilaDescartadas'
+			let computadora'' = (Jugador nombre mano'' seguras' ss)
+			(jugador, computadora'', mazo, pilaDescartadas'')
+		else do
+			let cartasOrdenadas = ordenarCartasNumero ss
+			let descartada = last (cartasOrdenadas)
+			let ssComb = [dos | dos <- combinaciones 2 ss, esSemiSegura dos && descartada `elem` dos]
+			let conjEscalera = [cartas | cartas <- ssComb, esSemiSeguraPalo cartas]
+			let conjNumeros = [cartas | cartas <- ssComb, esSemiSeguraNumero cartas]
+			let aEliminar = if length conjEscalera >=1 then head conjEscalera else head conjNumeros
+			let [aDejar] = [carta | carta <- aEliminar, not (carta == descartada)]
+			let ss' = [carta | carta <- cartasOrdenadas, not (carta == descartada) && not (carta == aDejar) ] 
+			let pilaDescartadas'' = [descartada] ++ pilaDescartadas'
+			let mano'' = seguras' ++ ss' ++ [aDejar] --aca no se repetirian??
+			let computadora'' = (Jugador nombre mano'' seguras' ss')
+			(jugador, computadora'', mazo, pilaDescartadas'')
+					
+--	else (jugador, (Jugador "AA" mano seguras ss), mazo, tail pilaDescartadas)
+	else do
+	let combPosibles = [tres | tres <- combinaciones 3 mano'\\(combinaciones 2 ss), esBuena tres && cDescartada `elem` tres]
+	if length combPosibles >=1
+	then do
+		let seguras' = seguras ++ last combPosibles
+		let ss' = [carta | carta <- ss, carta `notElem` seguras']
+		let computadora' = (Jugador nombre mano' seguras' ss')
+		(jugador, computadora', mazo, pilaDescartadas')
+--		let manoAux = [carta | carta <- mano', carta `notElem` (seguras' `union` ss')] -- TODAS LAS QUE NO ESTAN EN SEGURAS Y SS
+--		if length manoAux > 0
+--		then do
+--			let cartasOrdenadas = ordenarCartasNumero manoAux
+--			let descartada = last (cartasOrdenadas) --SACAR UNA (EN LO POSIBLE LA MAS GRANDE)
+--			let mano'' = init (cartasOrdenadas) ++ seguras' ++ ss  -- y poner el resto en mano''
+--			let pilaDescartadas'' = [descartada] ++ pilaDescartadas'
+--			let computadora'' = (Jugador nombre mano'' seguras' ss)
+--			(jugador, computadora'', mazo, pilaDescartadas'')
+--		else do
+--			let cartasOrdenadas = ordenarCartasNumero ss
+--			let descartada = last (cartasOrdenadas)
+--			let ssComb = [dos | dos <- combinaciones 2 ss, esSemiSegura dos && descartada `elem` dos]
+--			let conjEscalera = [cartas | cartas <- ssComb, esSemiSeguraPalo cartas]
+--			let conjNumeros = [cartas | cartas <- ssComb, esSemiSeguraNumero cartas]
+--			let aEliminar = if length conjEscalera >=1 then head conjEscalera else head conjNumeros
+--			let [aDejar] = [carta | carta <- aEliminar, not (carta == descartada)]
+--			let ss' = [carta | carta <- cartasOrdenadas, not (carta == descartada) && not (carta == aDejar) ] 
+--			let pilaDescartadas'' = [descartada] ++ pilaDescartadas'
+--			let mano'' = seguras' ++ ss' ++ [aDejar] --aca no se repetirian??
+--			let computadora'' = (Jugador nombre mano'' seguras' ss')
+--			(jugador, computadora'', mazo, pilaDescartadas'')
+	-- SI HAY, AGREGAR LA CARTA A SEGURAS
+	else (jugador, (Jugador "AA" mano seguras ss), mazo, tail pilaDescartadas)
+	
+	
 ---- SINO SIRVE, SEGUIR CON LA DESCONOCIDA
 --	(mazo', computadora') = repartirCartaAJugador mazo computadora
 --	
