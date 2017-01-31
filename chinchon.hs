@@ -1,7 +1,12 @@
 module Chinchon where
 
-import Data.List
+import Data.List (sort, permutations, tails, (\\), sortBy)
 import Data.Ord (comparing)
+import System.Random
+import Data.Array.ST
+import Control.Monad
+import Control.Monad.ST
+import Data.STRef
 
 --Creacion mazo de 48 cartas con simbolos de poker pero sin los 4 literales (A, J , Q, K) 
 --Se ordenan de menor a mayor rango de la siguiente forma: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 y 12 
@@ -19,6 +24,7 @@ type Repartir = Mazo -> (Carta, Mazo)
 data Jugador = Jugador { nombre :: String, mano :: Mano, seguras :: Seguras, semiSeguras ::SemiSeguras} deriving (Show)
 
 type EstadoDeJuego = (Jugador, Jugador, Mazo, Mazo)
+type Descartar = Mano -> Int -> Mazo -> (Mano, Mazo)
 
 --Se asignan simbolo ASCII a cada palo 
 instance Show Palo where
@@ -49,7 +55,30 @@ nuevoMazo = [Carta n p | p <- [Treboles .. ], n <- [Uno .. ]]
 nuevoJugador :: String -> Jugador
 nuevoJugador nombre = Jugador nombre [] [] []
 
--- Hacer funcion para mezclar cartas
+-- Funcion para mezclar cartas, encontrada en otro github porque no sabiamos como hacerla eficiente
+shuffle' :: [a] -> StdGen -> ([a],StdGen)
+shuffle' xs gen = runST (do
+				g <- newSTRef gen
+				let randomRST lohi = do
+							(a,s') <- liftM (randomR lohi) (readSTRef g)
+							writeSTRef g s'
+							return a
+				ar <- newArray n xs
+				xs' <- forM [1..n] $ \i -> do
+								j <- randomRST (i,n)
+								vi <- readArray ar i
+								vj <- readArray ar j
+								writeArray ar j vi
+								return vj
+				gen' <- readSTRef g
+				return (xs',gen'))
+	where
+		n = length xs
+		newArray :: Int -> [a] -> ST s (STArray s Int a)
+		newArray n xs =  newListArray (1,n) xs
+
+shuffleIO :: [a] -> IO [a]
+shuffleIO xs = getStdRandom (shuffle' xs)
 
 -- Repartir cartas
 repartir :: Repartir
