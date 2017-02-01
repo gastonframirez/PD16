@@ -1,5 +1,31 @@
 import Chinchon
+import System.Random
 
+main :: IO ()
+main = do
+
+	estadoInicial <- setup
+	jugar estadoInicial 1 0
+	
+setup :: IO (EstadoDeJuego)
+setup = do
+	-- shuffle cards
+	mazo <- shuffleIO nuevoMazo
+	-- creamos jugador
+	putStrLn "Cual es tu nombre?"
+	jugador <- nuevoJugador <$> getLine
+	
+	let computadora = nuevoJugador "Computadora"
+	-- repartir 7 cartas a todos los jugadores
+	let (mazo', jugador') = repartirNCartasAJugador 7 mazo jugador
+	let jugador'' = (Jugador (nombre jugador') (ordenarTodasCartas (mano jugador')) [] [])
+	let (mazo'', computadora') = repartirNCartasAJugador 7 mazo' computadora
+	-- turn 1 card and make a discarded pile
+	let (cartaDescartada, mazoAux) = repartir mazo''
+	let pilaDescartada = [cartaDescartada]
+
+	return (jugador'', computadora', mazoAux, pilaDescartada)
+	
 esPar :: Int -> Bool
 esPar 0 = True
 esPar n = n `rem` 2 == 0
