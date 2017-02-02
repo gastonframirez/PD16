@@ -1,11 +1,13 @@
 import Chinchon
 import System.Random
+import System.IO
+import Control.Monad 
 
 main :: IO ()
 main = do
-
-	estadoInicial <- setup
-	jugar estadoInicial 1 0
+	hSetBuffering stdin LineBuffering
+	initialState <- setup
+	jugar initialState 1 0
 	
 setup :: IO (EstadoDeJuego)
 setup = do
@@ -13,52 +15,79 @@ setup = do
 	mazo <- shuffleIO nuevoMazo
 	-- creamos jugador
 	putStrLn "Cual es tu nombre?"
-	jugador <- nuevoJugador <$> getLine
+	player <- nuevoJugador <$> getLine
 	
 	let computadora = nuevoJugador "Computadora"
 	-- repartir 7 cartas a todos los jugadores
-	let (mazo', jugador') = repartirNCartasAJugador 7 mazo jugador
-	let jugador'' = (Jugador (nombre jugador') (ordenarTodasCartas (mano jugador')) [] [])
+	let (mazo', player') = repartirNCartasAJugador 7 mazo player
+	let player'' = (Jugador (nombre player') (ordenarTodasCartas (mano player')) [] [])
 	let (mazo'', computadora') = repartirNCartasAJugador 7 mazo' computadora
-	-- turn 1 card and make a discarded pile
+	-- Dar vuelta una carta y dejarla en la pila de descartadas
 	let (cartaDescartada, mazoAux) = repartir mazo''
 	let pilaDescartada = [cartaDescartada]
 
-	return (jugador'', computadora', mazoAux, pilaDescartada)
+	return (player'', computadora'', mazoAux, pilaDescartada)
 	
 esPar :: Int -> Bool
 esPar 0 = True
 esPar n = n `rem` 2 == 0
 
 jugar :: EstadoDeJuego -> Int -> Int-> IO ()
-jugar estado@(jugador, computadora, _,_) turno corto =
-	if corto == 1
-		then if puedeGanar jugador
-			then putStrLn $ "Ganaste! " ++ mostrarMano estado
-		else do
-			putStrLn $ "No podés cortar todavia! Intentá cuando tengas combinaciones.\n"
-			jugar estado (turno) 0
-	else if corto == 2 
-		then putStrLn $ "Gano la computadora! " ++ mostrarMano estado
+jugar estado@(jugador, computadora, mazo, pilaDescartadas) turno corto =
+	if length mazo == 0
+	then do	
+		let pilaDescartadas' = head pilaDescartadas
+		mazo' <- shuffleIO (tail pilaDescartadas)
+		jugar (jugador, computadora, mazo', [pilaDescartadas']) turno corto
 	else
-		if not (esPar turno)
-		then do
-			estado' <- levantarCarta estado
-			putStrLn "Que querés hacer ahora? \n  1) Tirar carta\n  2) Tirar y cortar)"
-			respuesta <- readLn
-			estado'' <- descartarCarta estado'
-			if respuesta == 2
-				then jugar estado'' (turno) 1
+		if corto == 1
+			then if esChinchon (mano jugador)
+				then putStrLn $ "Ganaste el juego! " ++ mostrarMano estado
 			else
-				jugar estado'' (turno+1) 0
-		else do
---			estado' <- jugadaComputadora estado
---if esChincho......
-			if puedeGanar computadora
-			then
-				jugar estado (turno) 2
+				if puedeGanarMenosDiez (mano jugador)
+					then putStrLn $ "Ganaste la ronda con menos 10! " ++ mostrarMano estado
+				else 
+					if puedeGanarSobraUna (mano jugador)
+						then  putStrLn $ "Ganaste la ronda! Sumas:  " ++ mostrarMano estado
+					else do
+					putStrLn $ "No podés cortar todavia! Intentá cuando tengas combinaciones.\n"
+					jugar estado (turno) 0
+					
+		else if corto == 2 
+			then if esChinchon (mano computadora)
+				then putStrLn $ "Computadora gano el juego! " ++ mostrarManoCompu estado
 			else
-				jugar estado (turno+1) 0
+				if puedeGanarMenosDiez (mano computadora)
+					then putStrLn $ "Computadora gano la ronda, con menos 10! " ++ mostrarManoCompu estado
+				else 
+					if puedeGanarSobraUnaComputadora (mano computadora)
+						then  putStrLn $ "Computadora gano la ronda, suma: " ++ mostrarManoCompu estado
+					else jugar estado (turno) 0
+		else				
+			if not (esPar turno)
+			then do
+				putStrLn $ "\nEstado Compu Despues:" ++ show computadora
+				putStrLn $ "\nDescartadas por Compu:" ++ show pilaDescartadas
+				estado' <- levantarCarta estado
+				putStrLn $ mostrarMano estado'
+				putStrLn "Que querés hacer ahora? \n  1) Tirar carta\n  2) Tirar y cortar"
+				respuesta <- readLn
+				estado'' <- descartarCarta estado'
+				putStrLn $ mostrarMano estado''
+				if respuesta == 2
+					then jugar estado'' (turno) 1
+				else
+					jugar estado'' (turno+1) 0
+			else do
+				putStrLn $ "\nDescartadas por user:" ++ show pilaDescartadas
+				putStrLn $ "Primera mazo: " ++ show (head mazo)
+				putStrLn $ "\nEstado Compu:" ++ show computadora
+				putStrLn $ "Mano Compu Antes: " ++ mostrarManoCompu estado
+				let estado' = jugadaComputadora estado
+				let computadoraDespues = devolverComputadoraEstado estado'
+				if puedeGanarComputadora computadoraDespues
+				then  jugar estado' (turno) 2
+				else jugar estado' (turno+1) 0
 
 
 levantarCarta :: EstadoDeJuego -> IO EstadoDeJuego
