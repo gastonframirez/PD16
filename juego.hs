@@ -8,26 +8,28 @@ main = do
 	hSetBuffering stdin LineBuffering
 	initialState <- setup
 	jugar initialState 1 0
-	
+
+
 setup :: IO (EstadoDeJuego)
 setup = do
 	-- shuffle cards
 	mazo <- shuffleIO nuevoMazo
-	-- creamos jugador
+	-- create player
 	putStrLn "Cual es tu nombre?"
 	player <- nuevoJugador <$> getLine
 	
 	let computadora = nuevoJugador "Computadora"
-	-- repartir 7 cartas a todos los jugadores
+	-- deal 7 cards to all players
 	let (mazo', player') = repartirNCartasAJugador 7 mazo player
 	let player'' = (Jugador (nombre player') (ordenarTodasCartas (mano player')) [] [])
 	let (mazo'', computadora') = repartirNCartasAJugador 7 mazo' computadora
-	-- Dar vuelta una carta y dejarla en la pila de descartadas
+	let computadora''  = configurarComputadora computadora'
+	-- turn 1 card and make a discarded pile
 	let (cartaDescartada, mazoAux) = repartir mazo''
 	let pilaDescartada = [cartaDescartada]
 
 	return (player'', computadora'', mazoAux, pilaDescartada)
-	
+
 esPar :: Int -> Bool
 esPar 0 = True
 esPar n = n `rem` 2 == 0
@@ -52,7 +54,7 @@ jugar estado@(jugador, computadora, mazo, pilaDescartadas) turno corto =
 					else do
 					putStrLn $ "No podés cortar todavia! Intentá cuando tengas combinaciones.\n"
 					jugar estado (turno) 0
-					
+			
 		else if corto == 2 
 			then if esChinchon (mano computadora)
 				then putStrLn $ "Computadora gano el juego! " ++ mostrarManoCompu estado
@@ -63,7 +65,8 @@ jugar estado@(jugador, computadora, mazo, pilaDescartadas) turno corto =
 					if puedeGanarSobraUnaComputadora (mano computadora)
 						then  putStrLn $ "Computadora gano la ronda, suma: " ++ mostrarManoCompu estado
 					else jugar estado (turno) 0
-		else				
+			
+		else
 			if not (esPar turno)
 			then do
 				putStrLn $ "\nEstado Compu Despues:" ++ show computadora
@@ -103,6 +106,6 @@ descartarCarta ((Jugador nombre mano s ss), computadora, mazoRestante, pilaDesca
 	putStrLn $ "\nTu mano: " ++ show mano
 	putStrLn "Elegí una carta a descartar (1-8)"
 	n <- readLn
-	-- VER COMO HACER PARA QUE NO TOME VALORES MENORES a 0 y MAYORES a 8
+	-- VER COMO HACER PARA QUE NO TOME VALORES MENORES a 1 y MAYORES a 8
 	let (mano', pilaDescartadas') = descartar mano n pilaDescartadas
 	return ((Jugador nombre mano' s ss), computadora, mazoRestante, pilaDescartadas')

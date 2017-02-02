@@ -7,7 +7,6 @@ import Data.Array.ST
 import Control.Monad
 import Control.Monad.ST
 import Data.STRef
-
 --Creacion mazo de 48 cartas con simbolos de poker pero sin los 4 literales (A, J , Q, K) 
 --Se ordenan de menor a mayor rango de la siguiente forma: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 y 12 
 
@@ -29,26 +28,26 @@ type Descartar = Mano -> Int -> Mazo -> (Mano, Mazo)
 --Se asignan simbolo ASCII a cada palo 
 
 instance Show Palo where
-    show Picas = "♠"
-    show Corazones = "♥"
-    show Diamantes = "♦"
-    show Treboles = "♣"
+	show Picas = "♠"
+	show Corazones = "♥"
+	show Diamantes = "♦"
+	show Treboles = "♣"
 
 --Se asignan numeros, literales y signos a cada carta depende su valor
 
 instance Show Carta where
-    show (Carta Uno palo)   = "1" ++ show palo
-    show (Carta Dos palo)   = "2" ++ show palo
-    show (Carta Tres palo) = "3" ++ show palo
-    show (Carta Cuatro palo)  = "4" ++ show palo
-    show (Carta Cinco palo)  = "5" ++ show palo
-    show (Carta Seis palo)   = "6" ++ show palo
-    show (Carta Siete palo) = "7" ++ show palo
-    show (Carta Ocho palo) = "8" ++ show palo
-    show (Carta Nueve palo)  = "9" ++ show palo
-    show (Carta Diez palo)   = "10" ++ show palo
-    show (Carta Once palo)  = "11" ++ show palo
-    show (Carta Doce palo) = "12" ++ show palo
+	show (Carta Uno palo)   = "1" ++ show palo
+	show (Carta Dos palo)   = "2" ++ show palo
+	show (Carta Tres palo) = "3" ++ show palo
+	show (Carta Cuatro palo)  = "4" ++ show palo
+	show (Carta Cinco palo)  = "5" ++ show palo
+	show (Carta Seis palo)   = "6" ++ show palo
+	show (Carta Siete palo) = "7" ++ show palo
+	show (Carta Ocho palo) = "8" ++ show palo
+	show (Carta Nueve palo)  = "9" ++ show palo
+	show (Carta Diez palo)   = "10" ++ show palo
+	show (Carta Once palo)  = "11" ++ show palo
+	show (Carta Doce palo) = "12" ++ show palo
 
 nuevoMazo :: Mazo
 nuevoMazo = [Carta n p | p <- [Treboles .. ], n <- [Uno .. ]]
@@ -57,7 +56,30 @@ nuevoMazo = [Carta n p | p <- [Treboles .. ], n <- [Uno .. ]]
 nuevoJugador :: String -> Jugador
 nuevoJugador nombre = Jugador nombre [] [] []
 
--- Mezclar cartas, sacado de un repositorio para mayor eficiencia
+-- Repartir cartas
+
+repartir :: Repartir
+repartir [] = error "Mazo Vacio"
+repartir (x:xs) = (x, xs)
+
+repartirCartaAJugador :: Mazo -> Jugador -> (Mazo, Jugador)
+repartirCartaAJugador [] _ = error "Mazo Vacio"
+repartirCartaAJugador m (Jugador nombre mano s ss) = let (carta, m') = repartir m
+												 in (m', Jugador nombre (carta:mano) s ss)
+
+repartirNCartasAJugador :: Int -> Mazo -> Jugador -> (Mazo, Jugador)
+repartirNCartasAJugador n m j
+	| n > length m  = error "No hay cartas suficientes"
+	| n < 1         = error "Debes repartir por lo menos 1 carta"
+	| n == 1        = repartirCartaAJugador m j
+	| otherwise     = repartirNCartasAJugador (n - 1) m' j' 
+		where (m', j') = repartirCartaAJugador m j
+
+
+
+-- | Randomly shuffle a list without the IO Monad
+--   /O(N)/
+
 shuffle' :: [a] -> StdGen -> ([a],StdGen)
 shuffle' xs gen = runST (do
 				g <- newSTRef gen
@@ -82,40 +104,21 @@ shuffle' xs gen = runST (do
 shuffleIO :: [a] -> IO [a]
 shuffleIO xs = getStdRandom (shuffle' xs)
 
--- Repartir cartas
-
-repartir :: Repartir
-repartir [] = error "Mazo Vacio"
-repartir (x:xs) = (x, xs)
-
-repartirCartaAJugador :: Mazo -> Jugador -> (Mazo, Jugador)
-repartirCartaAJugador [] _ = error "Mazo Vacio"
-repartirCartaAJugador m (Jugador nombre mano s ss) = let (carta, m') = repartir m
-                                                 in (m', Jugador nombre (carta:mano) s ss)
-
-repartirNCartasAJugador :: Int -> Mazo -> Jugador -> (Mazo, Jugador)
-repartirNCartasAJugador n m j
-    | n > length m  = error "No hay cartas suficientes"
-    | n < 1         = error "Debes repartir por lo menos 1 carta"
-    | n == 1        = repartirCartaAJugador m j
-    | otherwise     = repartirNCartasAJugador (n - 1) m' j' 
-        where (m', j') = repartirCartaAJugador m j
-
 
 tomarCartaDesconocida :: EstadoDeJuego -> EstadoDeJuego
 tomarCartaDesconocida (jugador, computadora, mazo, pilaDescartadas) = (jugador', computadora, mazo', pilaDescartadas)
-                        where (mazo', jugador') = repartirCartaAJugador mazo jugador
+						where (mazo', jugador') = repartirCartaAJugador mazo jugador
 
 cartaDesconocida ::  [Carta] -> Carta
 cartaDesconocida mazoCartas = head mazoCartas
 
 tomarUltimaCartaDescartada :: EstadoDeJuego -> EstadoDeJuego
 tomarUltimaCartaDescartada (jugador, computadora, mazo, pilaDescartadas) = (jugador', computadora, mazo, pilaDescartadas')
-                        where (pilaDescartadas', jugador') = repartirCartaAJugador pilaDescartadas jugador
+						where (pilaDescartadas', jugador') = repartirCartaAJugador pilaDescartadas jugador
 
 ultimaCartaDescartada :: [Carta] -> Carta
 ultimaCartaDescartada pilaDescartadas = head pilaDescartadas
-                        
+						
 mostrarUltimaCartaDescartada :: EstadoDeJuego -> String
 mostrarUltimaCartaDescartada (_, _, _, pilaDescartadas) = show $ head pilaDescartadas
 
@@ -144,34 +147,36 @@ esBuena cartas = cartasEnSecuencia cartas || cartasEnGrupo cartas
 puedeGanar :: Jugador -> Bool
 puedeGanar (Jugador _ mano _ _) = puedeGanarMenosDiez mano || puedeGanarSobraUna mano
 
+
+puedeGanarComputadora :: Jugador -> Bool
+puedeGanarComputadora (Jugador _ mano _ _) = puedeGanarMenosDiez mano || puedeGanarSobraUnaComputadora mano
+
 puedeGanarMenosDiez :: [Carta] -> Bool
 puedeGanarMenosDiez mano =  do
 --										let combinacionesDe7 = combinacionesDeMano mano
-                                        let buenasCombinaciones mano' = [ (cuatro, tres) | cuatro <- combinaciones 4 mano', let tres = mano' \\ cuatro, esBuena cuatro, esBuena tres]
-                                        let  existeSolucion  = \m -> (length $ buenasCombinaciones m) >= 1
-                                        any existeSolucion [mano]
+										let buenasCombinaciones mano' = [ (cuatro, tres) | cuatro <- combinaciones 4 mano', let tres = mano' \\ cuatro, esBuena cuatro, esBuena tres]
+										let  existeSolucion  = \m -> (length $ buenasCombinaciones m) >= 1
+										any existeSolucion [mano]
 
 
 puedeGanarSobraUna :: [Carta] -> Bool
 puedeGanarSobraUna mano =  do
-                                        let buenasCombinaciones mano' = [ (tres, tres'') | tres <- combinaciones 3 mano',let tres' = mano' \\ tres, tres'' <- combinaciones 3 tres', esBuena tres, esBuena tres'']
-                                        let  existeSolucion  = \m -> (length $ buenasCombinaciones m) >= 1
-                                        any existeSolucion [mano]
-                                        
+										let buenasCombinaciones mano' = [ (tres, tres'') | tres <- combinaciones 3 mano',let tres' = mano' \\ tres, tres'' <- combinaciones 3 tres', esBuena tres, esBuena tres'']
+										let  existeSolucion  = \m -> (length $ buenasCombinaciones m) >= 1
+										any existeSolucion [mano]
+	
 puedeGanarSobraUnaComputadora :: [Carta] -> Bool
 puedeGanarSobraUnaComputadora mano =  do
 										let buenasCombinaciones mano' = [ (tres, tres'') | tres <- combinaciones 3 mano',let tres' = mano' \\ tres, tres'' <- combinaciones 3 tres', esBuena tres, esBuena tres'']
 										let restos mano' = concat [ (mano'\\tres)\\tres'' | tres <- combinaciones 3 mano',let tres' = mano' \\ tres, tres'' <- combinaciones 3 tres', esBuena tres, esBuena tres'']
 										let restoMasBajo = head (ordenarCartasNumero (restos mano))
 										let  existeSolucion  = \m -> ((length $ buenasCombinaciones m) >= 1 && (valor restoMasBajo) <= Dos )
-										any existeSolucion [mano]
-
+										any existeSolucion [mano]							
 -- Obtener por palo
 obtenerPorPalo :: Palo -> [Carta] -> [Carta]
 obtenerPorPalo paloParam cartas = filter (\carta -> palo carta == paloParam) cartas
 
--- supone que mandas la cantidad N de cartas en el array
-
+-- supone que mandas la cantidad N de cartas en el array y que estan ordenadas de menor a mayor
 tieneNSuc :: [Carta] -> Int -> Bool
 tieneNSuc [] _ = False
 tieneNSuc _ 0 = False
@@ -211,15 +216,15 @@ cartasEnGrupo _ = False
 -- Secuencia
 cartasEnSecuencia :: [Carta] -> Bool
 cartasEnSecuencia [(Carta n1 p1), (Carta n2 p2), (Carta n3 p3)] = mismoPalo && enSecuencia
-        where 
-            mismoPalo = p1 == p2 && p1 == p3
-            enSecuencia = ordenado !! 0 + 1 == ordenado !! 1 && ordenado !! 1 + 1 == ordenado !! 2
-            ordenado = map fromEnum $ sort [n1, n2, n3]
+		where 
+			mismoPalo = p1 == p2 && p1 == p3
+			enSecuencia = ordenado !! 0 + 1 == ordenado !! 1 && ordenado !! 1 + 1 == ordenado !! 2
+			ordenado = map fromEnum $ sort [n1, n2, n3]
 cartasEnSecuencia [(Carta n1 p1), (Carta n2 p2), (Carta n3 p3), (Carta n4 p4)] = mismoPalo && enSecuencia
-        where 
-            mismoPalo = p1 == p2 && p1 == p3 && p1 == p4
-            enSecuencia = ordenado !! 0 + 1 == ordenado !! 1 && ordenado !! 1 + 1 == ordenado !! 2 && ordenado !! 2 + 1 == ordenado !! 3
-            ordenado = map fromEnum $ sort [n1, n2, n3,n4]
+		where 
+			mismoPalo = p1 == p2 && p1 == p3 && p1 == p4
+			enSecuencia = ordenado !! 0 + 1 == ordenado !! 1 && ordenado !! 1 + 1 == ordenado !! 2 && ordenado !! 2 + 1 == ordenado !! 3
+			ordenado = map fromEnum $ sort [n1, n2, n3,n4]
 cartasEnSecuencia _ = False
 
 esSemiSegura :: [Carta] -> Bool
@@ -237,11 +242,12 @@ esSemiSeguraNumero [(Carta n1 _), (Carta n2 _)] = n1 == n2
 removeItem _ []                 = []
 removeItem x (y:ys) | x == y    = removeItem x ys
 					| otherwise = y : removeItem x ys
+					
 
 jugadaComputadora :: EstadoDeJuego -> EstadoDeJuego
 jugadaComputadora estado@(jugador, (Jugador nombre mano seguras ss), mazo, pilaDescartadas) = do
 -- 	VER SI LA DE DESCARTADA SIRVE
-    let cLevantada = ultimaCartaDescartada pilaDescartadas
+	let cLevantada = ultimaCartaDescartada pilaDescartadas
 	let mano' = [cLevantada] ++ mano
 	let pilaDescartadas' = tail pilaDescartadas
 	let posibles = [cuatro | cuatro <- combinaciones 4 mano'\\(combinaciones 3 seguras), esBuena cuatro, cLevantada `elem` cuatro]
@@ -256,7 +262,7 @@ jugadaComputadora estado@(jugador, (Jugador nombre mano seguras ss), mazo, pilaD
 			descartarSobrante (jugador, (Jugador nombre mano' seguras' ss'), mazo, pilaDescartadas') sobrantes
 		else do
 			descartarDeSemiSeguras (jugador, (Jugador nombre mano' seguras' ss'), mazo, pilaDescartadas') cLevantada
-					
+								
 	else do
 		let combPosibles = [tres | tres <- combinaciones 3 (mano'\\seguras)\\(combinaciones 2 ss), esBuena tres && cLevantada `elem` tres]
 		if length combPosibles >=1
@@ -274,8 +280,9 @@ jugadaComputadora estado@(jugador, (Jugador nombre mano seguras ss), mazo, pilaD
 				descartarSobrante (jugador, (Jugador nombre mano' seguras' ss''), mazo, pilaDescartadas') sobrantes
 			else do
 				descartarDeSemiSeguras (jugador, (Jugador nombre mano' seguras' ss''), mazo, pilaDescartadas') cLevantada
-		else cartaDesconocidaComputadora (estado)
-
+		else cartaDesconocidaComputadora (estado) 
+	
+	
 descartarSobrante :: EstadoDeJuego -> [Carta]-> EstadoDeJuego
 descartarSobrante estado@(jugador, (Jugador nombre mano seguras ss), mazo, pilaDescartadas) sobrantes = do
 	let cartasOrdenadas = ordenarCartasNumero sobrantes
@@ -396,6 +403,3 @@ mostrarManoCompu (_, (Jugador _ mano _ _), _, _) = show mano
 
 devolverComputadoraEstado :: EstadoDeJuego -> Jugador
 devolverComputadoraEstado (_, computadora, _, _) = computadora
-
-	
-
