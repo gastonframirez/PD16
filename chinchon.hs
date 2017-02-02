@@ -106,6 +106,9 @@ tomarCartaDesconocida :: EstadoDeJuego -> EstadoDeJuego
 tomarCartaDesconocida (jugador, computadora, mazo, pilaDescartadas) = (jugador', computadora, mazo', pilaDescartadas)
                         where (mazo', jugador') = repartirCartaAJugador mazo jugador
 
+cartaDesconocida ::  [Carta] -> Carta
+cartaDesconocida mazoCartas = head mazoCartas
+
 tomarUltimaCartaDescartada :: EstadoDeJuego -> EstadoDeJuego
 tomarUltimaCartaDescartada (jugador, computadora, mazo, pilaDescartadas) = (jugador', computadora, mazo, pilaDescartadas')
                         where (pilaDescartadas', jugador') = repartirCartaAJugador pilaDescartadas jugador
@@ -155,6 +158,14 @@ puedeGanarSobraUna mano =  do
                                         let  existeSolucion  = \m -> (length $ buenasCombinaciones m) >= 1
                                         any existeSolucion [mano]
                                         
+puedeGanarSobraUnaComputadora :: [Carta] -> Bool
+puedeGanarSobraUnaComputadora mano =  do
+										let buenasCombinaciones mano' = [ (tres, tres'') | tres <- combinaciones 3 mano',let tres' = mano' \\ tres, tres'' <- combinaciones 3 tres', esBuena tres, esBuena tres'']
+										let restos mano' = concat [ (mano'\\tres)\\tres'' | tres <- combinaciones 3 mano',let tres' = mano' \\ tres, tres'' <- combinaciones 3 tres', esBuena tres, esBuena tres'']
+										let restoMasBajo = head (ordenarCartasNumero (restos mano))
+										let  existeSolucion  = \m -> ((length $ buenasCombinaciones m) >= 1 && (valor restoMasBajo) <= Dos )
+										any existeSolucion [mano]
+
 -- Obtener por palo
 obtenerPorPalo :: Palo -> [Carta] -> [Carta]
 obtenerPorPalo paloParam cartas = filter (\carta -> palo carta == paloParam) cartas
@@ -165,15 +176,17 @@ tieneNSuc :: [Carta] -> Int -> Bool
 tieneNSuc [] _ = False
 tieneNSuc _ 0 = False
 tieneNSuc (x:xs) 1 = True
+tieneNSuc (x:xs) _ | valor x == Doce = False
 tieneNSuc cartas n | n > length cartas = False
 tieneNSuc (x:y:zs) n | (valor y == succ (valor x)) && (palo y == palo x) =  tieneNSuc (y:zs) (n-1)
 tieneNSuc (x:y:zs) n | valor y ==  valor x = False
+tieneNSuc (x:y:zs) n | valor y > valor x = False
 tieneNSuc (x:y:zs) n | (valor y < valor x) && (palo y == palo x) = True
 
 
 -- supone todas las cartas del mismo Palo
 esChinchon :: [Carta] -> Bool
-esChinchon cartas =	tieneNSuc cartas 7
+esChinchon cartas =	tieneNSuc (ordenarCartasNumero cartas) 7
 
 
 -- ordernar cartas (supone del mismo Palo)
@@ -228,76 +241,161 @@ removeItem x (y:ys) | x == y    = removeItem x ys
 jugadaComputadora :: EstadoDeJuego -> EstadoDeJuego
 jugadaComputadora estado@(jugador, (Jugador nombre mano seguras ss), mazo, pilaDescartadas) = do
 -- 	VER SI LA DE DESCARTADA SIRVE
-    let cDescartada = (ultimaCartaDescartada pilaDescartadas)
-	let mano' = [cDescartada] ++ mano
+    let cLevantada = ultimaCartaDescartada pilaDescartadas
+	let mano' = [cLevantada] ++ mano
 	let pilaDescartadas' = tail pilaDescartadas
-	if length [cuatro | cuatro <- combinaciones 4 mano'\\(combinaciones 3 seguras), esBuena cuatro] >=1
+	let posibles = [cuatro | cuatro <- combinaciones 4 mano'\\(combinaciones 3 seguras), esBuena cuatro, cLevantada `elem` cuatro]
+	if length posibles >=1
 	then do
-		let seguras' = seguras ++ [cDescartada]
-		let computadora' = (Jugador nombre mano' seguras' ss)
-		let sobrantes = [carta | carta <- mano', carta `notElem` (seguras' `union` ss)] -- TODAS LAS QUE NO ESTAN EN SEGURAS Y SS
+		let combElegida = if length [cartas | cartas <- posibles, cartasEnSecuencia cartas] >= 1 then last [cartas | cartas <- posibles, cartasEnSecuencia cartas] else last posibles
+		let seguras' = removerDuplicados (seguras ++ combElegida)
+		let ss' = [carta | carta <- ss, carta `notElem` seguras']
+		let sobrantes = [carta | carta <- mano', carta `notElem` (seguras' `union` ss')] -- TODAS LAS QUE NO ESTAN EN SEGURAS Y SS
 		if length sobrantes > 0
 		then do
-			let cartasOrdenadas = ordenarCartasNumero sobrantes
-			let descartada = last (cartasOrdenadas) --SACAR UNA (EN LO POSIBLE LA MAS GRANDE)
-			let mano'' = init (cartasOrdenadas) ++ seguras' ++ ss  -- y poner el resto en mano''
-			let pilaDescartadas'' = [descartada] ++ pilaDescartadas'
-			let computadora'' = (Jugador nombre mano'' seguras' ss)
-			(jugador, computadora'', mazo, pilaDescartadas'')
+			descartarSobrante (jugador, (Jugador nombre mano' seguras' ss'), mazo, pilaDescartadas') sobrantes
 		else do
-			let cartasOrdenadas = ordenarCartasNumero ss
-			let descartada = last (cartasOrdenadas)
-			let ssComb = [dos | dos <- combinaciones 2 ss, esSemiSegura dos && descartada `elem` dos]
-			let conjEscalera = [cartas | cartas <- ssComb, esSemiSeguraPalo cartas]
-			let conjNumeros = [cartas | cartas <- ssComb, esSemiSeguraNumero cartas]
-			let aEliminar = if length conjEscalera >=1 then head conjEscalera else head conjNumeros
-			let [aDejar] = [carta | carta <- aEliminar, not (carta == descartada)]
-			let ss' = [carta | carta <- cartasOrdenadas, not (carta == descartada) && not (carta == aDejar) ] 
-			let pilaDescartadas'' = [descartada] ++ pilaDescartadas'
-			let mano'' = seguras' ++ ss' ++ [aDejar] --aca no se repetirian??
-			let computadora'' = (Jugador nombre mano'' seguras' ss')
-			(jugador, computadora'', mazo, pilaDescartadas'')
+			descartarDeSemiSeguras (jugador, (Jugador nombre mano' seguras' ss'), mazo, pilaDescartadas') cLevantada
 					
---	else (jugador, (Jugador "AA" mano seguras ss), mazo, tail pilaDescartadas)
 	else do
-	let combPosibles = [tres | tres <- combinaciones 3 mano'\\(combinaciones 2 ss), esBuena tres && cDescartada `elem` tres]
-	if length combPosibles >=1
-	then do
-		let seguras' = seguras ++ last combPosibles
-		let ss' = [carta | carta <- ss, carta `notElem` seguras']
-		let computadora' = (Jugador nombre mano' seguras' ss')
+		let combPosibles = [tres | tres <- combinaciones 3 (mano'\\seguras)\\(combinaciones 2 ss), esBuena tres && cLevantada `elem` tres]
+		if length combPosibles >=1
+		then do
+		-- ES ACA EL PROBLEMA, EL 9D SUPUESTAMENTE LE SIRVE, PERO EN VERDAD NO LE SERVIRIA PORQUE EL 8 YA ESTA USADO
+			let combElegida = if length [cartas | cartas <- combPosibles, cartasEnSecuencia cartas] >= 1 then last [cartas | cartas <- combPosibles, cartasEnSecuencia cartas] else last combPosibles
+			let seguras' = seguras ++ combElegida
+			let ss' = [carta | carta <- ss, carta `notElem` seguras']
+			let ssComb =  [carta | carta <- combinaciones 2 ss', esSemiSegura carta]
+			let ss'' = removerDuplicados (concat ssComb)
+			let sobrantes = [carta | carta <- mano', carta `notElem` (seguras' `union` ss'')] -- TODAS LAS QUE NO ESTAN EN SEGURAS Y SS
+
+			if length sobrantes > 0
+			then do
+				descartarSobrante (jugador, (Jugador nombre mano' seguras' ss''), mazo, pilaDescartadas') sobrantes
+			else do
+				descartarDeSemiSeguras (jugador, (Jugador nombre mano' seguras' ss''), mazo, pilaDescartadas') cLevantada
+		else cartaDesconocidaComputadora (estado)
+
+descartarSobrante :: EstadoDeJuego -> [Carta]-> EstadoDeJuego
+descartarSobrante estado@(jugador, (Jugador nombre mano seguras ss), mazo, pilaDescartadas) sobrantes = do
+	let cartasOrdenadas = ordenarCartasNumero sobrantes
+	let descartada = last (cartasOrdenadas) --SACAR UNA (EN LO POSIBLE LA MAS GRANDE)
+	let mano' = init (cartasOrdenadas) ++ seguras ++ ss  -- y poner el resto en mano''
+	let pilaDescartadas' = [descartada] ++ pilaDescartadas
+	let computadora' = (Jugador nombre mano' seguras ss)
+	(jugador, computadora', mazo, pilaDescartadas')
+	
+	
+descartarDeSemiSeguras ::  EstadoDeJuego -> Carta -> EstadoDeJuego
+descartarDeSemiSeguras estado@(jugador, (Jugador nombre mano seguras ss), mazo, pilaDescartadas) cLevantada = do	
+	if length ss >= 1 then do
+		let cartasOrdenadas = ordenarCartasNumero ss
+		let descartada = last (cartasOrdenadas)
+		let ssComb = [cartas | cartas <- combinaciones 2 ss, esSemiSegura cartas]
+		let combEscalera = [cartas | cartas <- ssComb, esSemiSeguraPalo cartas, descartada `elem` cartas]
+		let combNumeros = [cartas | cartas <- ssComb, esSemiSeguraNumero cartas,descartada `elem` cartas]
+		let aMover = if length combEscalera >=1 then head combEscalera else head combNumeros
+		let [aDejar] = [carta | carta <- aMover, not (carta == descartada)]
+		let ss' = [carta | carta <- cartasOrdenadas, not (carta == descartada), not (carta == aDejar) ] 
+		let pilaDescartadas' = [descartada] ++ pilaDescartadas
+		let mano' = seguras ++ ss' ++ [aDejar]
+		let computadora' = (Jugador nombre mano' seguras ss')
 		(jugador, computadora', mazo, pilaDescartadas')
---		let manoAux = [carta | carta <- mano', carta `notElem` (seguras' `union` ss')] -- TODAS LAS QUE NO ESTAN EN SEGURAS Y SS
---		if length manoAux > 0
---		then do
---			let cartasOrdenadas = ordenarCartasNumero manoAux
---			let descartada = last (cartasOrdenadas) --SACAR UNA (EN LO POSIBLE LA MAS GRANDE)
---			let mano'' = init (cartasOrdenadas) ++ seguras' ++ ss  -- y poner el resto en mano''
---			let pilaDescartadas'' = [descartada] ++ pilaDescartadas'
---			let computadora'' = (Jugador nombre mano'' seguras' ss)
---			(jugador, computadora'', mazo, pilaDescartadas'')
---		else do
---			let cartasOrdenadas = ordenarCartasNumero ss
---			let descartada = last (cartasOrdenadas)
---			let ssComb = [dos | dos <- combinaciones 2 ss, esSemiSegura dos && descartada `elem` dos]
---			let conjEscalera = [cartas | cartas <- ssComb, esSemiSeguraPalo cartas]
---			let conjNumeros = [cartas | cartas <- ssComb, esSemiSeguraNumero cartas]
---			let aEliminar = if length conjEscalera >=1 then head conjEscalera else head conjNumeros
---			let [aDejar] = [carta | carta <- aEliminar, not (carta == descartada)]
---			let ss' = [carta | carta <- cartasOrdenadas, not (carta == descartada) && not (carta == aDejar) ] 
---			let pilaDescartadas'' = [descartada] ++ pilaDescartadas'
---			let mano'' = seguras' ++ ss' ++ [aDejar] --aca no se repetirian??
---			let computadora'' = (Jugador nombre mano'' seguras' ss')
---			(jugador, computadora'', mazo, pilaDescartadas'')
-	-- SI HAY, AGREGAR LA CARTA A SEGURAS
-	else (jugador, (Jugador "AA" mano seguras ss), mazo, tail pilaDescartadas)
+	else do
+		let pilaDescartadas' = [cLevantada] ++ pilaDescartadas
+		let mano' = [carta | carta <- mano, not (carta == cLevantada)]
+		let computadora' = (Jugador nombre mano' seguras ss)
+		(jugador, computadora', mazo, pilaDescartadas')	
+	
+cartaDesconocidaComputadora :: EstadoDeJuego -> EstadoDeJuego
+cartaDesconocidaComputadora estado@(jugador, (Jugador nombre mano seguras ss), mazo, pilaDescartadas) = do
+	let cLevantada = cartaDesconocida mazo
+	let mano' = [cLevantada] ++ mano
+	let mazo' = tail mazo
+	let posibles = [cuatro | cuatro <- combinaciones 4 mano'\\(combinaciones 3 seguras), esBuena cuatro, cLevantada `elem` cuatro]
+	if length posibles >=1
+	then do
+		let combElegida = if length [cartas | cartas <- posibles, cartasEnSecuencia cartas] >= 1 then last [cartas | cartas <- posibles, cartasEnSecuencia cartas] else last posibles
+		let seguras' = removerDuplicados (seguras ++ combElegida)
+		let ss' = [carta | carta <- ss, carta `notElem` seguras']
+		--		let sobrantes = [carta | carta <- mano', carta `notElem` (seguras' `union` ss)] -- TODAS LAS QUE NO ESTAN EN SEGURAS Y SS
+		let sobrantes = (mano' \\ seguras') \\ ss'
+		if length sobrantes > 0
+		then do
+			descartarSobrante (jugador, (Jugador nombre mano' seguras' ss'), mazo', pilaDescartadas) sobrantes
+		else do
+			descartarDeSemiSeguras (jugador, (Jugador nombre mano' seguras' ss'), mazo', pilaDescartadas) cLevantada
+	else do
+		let combPosibles = [tres | tres <- combinaciones 3 (mano'\\seguras)\\(combinaciones 2 ss), esBuena tres &&  cLevantada `elem` tres]
+		if length combPosibles >=1
+		then do
+			-- ACA NO ESTA SACANDO LA CARTA QUE SOBRA DE UN SS QUE PASA A SEGURA
+			let combElegida = if length [cartas | cartas <- combPosibles, cartasEnSecuencia cartas] >= 1 then last [cartas | cartas <- combPosibles, cartasEnSecuencia cartas] else last combPosibles
+			let seguras' = seguras ++ combElegida
+			let ss' = [carta | carta <- ss, carta `notElem` seguras']
+			let ssComb =  [carta | carta <- combinaciones 2 ss', esSemiSegura carta]
+			let ss'' = removerDuplicados (concat ssComb)
+			let sobrantes = [carta | carta <- mano', carta `notElem` (seguras' `union` ss'')] -- TODAS LAS QUE NO ESTAN EN SEGURAS Y SS
+			if length sobrantes > 0
+			then do
+				descartarSobrante (jugador, (Jugador nombre mano' seguras' ss''), mazo', pilaDescartadas) sobrantes
+			else do
+				descartarDeSemiSeguras (jugador, (Jugador nombre mano' seguras' ss''), mazo', pilaDescartadas) cLevantada
+		else do
+			let resto = (mano' \\ seguras) \\ ss
+			let combinaciones2 = [carta | carta <- combinaciones 2 resto, esSemiSegura carta]
+			let combPalo = [carta | carta <- combinaciones2, esSemiSeguraPalo carta]
+			let combNumero = [carta | carta <- combinaciones2, esSemiSeguraNumero carta]
+			let combElegida = if (length combPalo) >=1 then head combPalo else if length (combNumero) >= 1 then head combNumero else []
+			let resto' =  resto \\ combElegida
+			let ss' = ss ++ combElegida
+			if length resto' >= 1
+			then do
+				let restoOrdenado = ordenarCartasNumero resto'
+				let descartada = last restoOrdenado
+				let pilaDescartadas' = [descartada] ++ pilaDescartadas
+				let mano'' = [carta | carta <- mano', not (carta == descartada)]
+				(jugador, (Jugador nombre mano'' seguras ss'), mazo', pilaDescartadas')
+			else do
+				let ss' = ss ++ combElegida
+				descartarDeSemiSeguras (jugador, (Jugador nombre mano' seguras ss'), mazo', pilaDescartadas) cLevantada
+			
+						
+	
+configurarComputadora :: Jugador -> Jugador
+configurarComputadora (Jugador nombre mano seguras ss) = do
+	let combinaciones4 = [carta | carta <- combinaciones 4 mano, esBuena carta]
+	let todasCombinaciones4 = removerDuplicados (concat combinaciones4)
+	let difCombinaciones4 = mano \\ todasCombinaciones4
+	let sobrantes = do 
+		if length difCombinaciones4 >= 1
+		then difCombinaciones4
+		else mano
+	let combinaciones3 = [carta | carta <- combinaciones 3 sobrantes, esBuena carta]
+	let todasCombinaciones3 = removerDuplicados (concat combinaciones3)
+	let difCombinaciones3 = sobrantes \\ todasCombinaciones3
+	let sobrantes' = do 
+		if length difCombinaciones3 >= 1
+		then difCombinaciones3
+		else sobrantes
+	let seguras' = todasCombinaciones4 ++ todasCombinaciones3
+	-- DEBERIAMOS VER ESTO --> ME HIZO UN SSEGURAS DE 3
+	let combinaciones2 = [carta | carta <- combinaciones 2 sobrantes', esSemiSegura carta]
+	let ss' = removerDuplicados (concat combinaciones2)
+	(Jugador nombre mano seguras' ss')
+
+
+removerDuplicados :: Eq a => [a] -> [a]
+removerDuplicados = foldl (\visto x -> if x `elem` visto
+	then visto
+	else visto ++ [x]) []
 	
 	
----- SINO SIRVE, SEGUIR CON LA DESCONOCIDA
---	(mazo', computadora') = repartirCartaAJugador mazo computadora
---	
-----DESCARTAR CARTA QUE NO SIRVE
---
---	return (jugador, computadora'', mazo', pilaDescartadas)
-    
--- QUE SIRVA SIGINIFICA QUE PUEDE FORMAR 4 EN ESCALERA, 3 EN ESCALERA, 4 EN GRUPO o 3 EN GRUPO.
+mostrarManoCompu :: EstadoDeJuego -> String
+mostrarManoCompu (_, (Jugador _ mano _ _), _, _) = show mano
+
+devolverComputadoraEstado :: EstadoDeJuego -> Jugador
+devolverComputadoraEstado (_, computadora, _, _) = computadora
+
+	
+
