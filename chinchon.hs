@@ -12,6 +12,22 @@ import Data.STRef
 
 data Palo =  Treboles | Diamantes | Corazones | Picas deriving (Eq, Ord, Enum)
 data Valor = Uno | Dos | Tres | Cuatro | Cinco | Seis | Siete | Ocho | Nueve | Diez | Once | Doce deriving (Show, Eq, Ord, Enum)
+
+obtenerValorNumerico :: Carta -> Int
+obtenerValorNumerico (Carta Uno _) = 1
+obtenerValorNumerico (Carta Dos _) = 2
+obtenerValorNumerico (Carta Tres _) = 3 
+obtenerValorNumerico (Carta Cuatro _) = 4
+obtenerValorNumerico (Carta Cinco _) = 5
+obtenerValorNumerico (Carta Seis _) = 6
+obtenerValorNumerico (Carta Siete _) = 7
+obtenerValorNumerico (Carta Ocho _) = 8 
+obtenerValorNumerico (Carta Nueve _) = 9
+obtenerValorNumerico (Carta Diez _) = 10
+obtenerValorNumerico (Carta Once _) = 11
+obtenerValorNumerico (Carta Doce _) = 12
+
+
 data Carta = Carta {valor :: Valor, palo :: Palo} deriving (Eq)
 
 type Mazo = [Carta]
@@ -20,12 +36,14 @@ type Seguras = [Carta]
 type SemiSeguras = [Carta]
 
 type Repartir = Mazo -> (Carta, Mazo)
-data Jugador = Jugador { nombre :: String, mano :: Mano, seguras :: Seguras, semiSeguras ::SemiSeguras} deriving (Show)
+data Jugador = Jugador { nombre :: String, mano :: Mano, seguras :: Seguras, semiSeguras ::SemiSeguras, puntos :: Int} deriving (Show)
 
 type EstadoDeJuego = (Jugador, Jugador, Mazo, Mazo)
 type Descartar = Mano -> Int -> Mazo -> (Mano, Mazo)
 
---Se asignan simbolo ASCII a cada palo 
+data CombinacionPuntaje = CombinacionPuntaje {combinacion :: [Carta], suma :: Int}
+
+--Se asignan simbolo ASCII a cada palo 	
 
 instance Show Palo where
 	show Picas = "♠"
@@ -54,7 +72,7 @@ nuevoMazo = [Carta n p | p <- [Treboles .. ], n <- [Uno .. ]]
 
 
 nuevoJugador :: String -> Jugador
-nuevoJugador nombre = Jugador nombre [] [] []
+nuevoJugador nombre = Jugador nombre [] [] [] 0
 
 -- Repartir cartas
 
@@ -64,8 +82,8 @@ repartir (x:xs) = (x, xs)
 
 repartirCartaAJugador :: Mazo -> Jugador -> (Mazo, Jugador)
 repartirCartaAJugador [] _ = error "Mazo Vacio"
-repartirCartaAJugador m (Jugador nombre mano s ss) = let (carta, m') = repartir m
-												 in (m', Jugador nombre (carta:mano) s ss)
+repartirCartaAJugador m (Jugador nombre mano s ss puntos) = let (carta, m') = repartir m
+												 in (m', Jugador nombre (carta:mano) s ss puntos)
 
 repartirNCartasAJugador :: Int -> Mazo -> Jugador -> (Mazo, Jugador)
 repartirNCartasAJugador n m j
@@ -123,7 +141,7 @@ mostrarUltimaCartaDescartada :: EstadoDeJuego -> String
 mostrarUltimaCartaDescartada (_, _, _, pilaDescartadas) = show $ head pilaDescartadas
 
 mostrarMano :: EstadoDeJuego -> String
-mostrarMano ((Jugador _ mano _ _), _, _, _) = show mano
+mostrarMano ((Jugador _ mano _ _ _), _, _, _) = show mano
 
 descartar :: Descartar
 descartar mano n mazo = let c = mano !! (n - 1) in (mano \\ [c], c:mazo)
@@ -145,11 +163,11 @@ esBuena cartas = cartasEnSecuencia cartas || cartasEnGrupo cartas
 
 --VER ESTOS 
 puedeGanar :: Jugador -> Bool
-puedeGanar (Jugador _ mano _ _) = puedeGanarMenosDiez mano || puedeGanarSobraUna mano
+puedeGanar (Jugador _ mano _ _ _) = puedeGanarMenosDiez mano || puedeGanarSobraUna mano
 
 
 puedeGanarComputadora :: Jugador -> Bool
-puedeGanarComputadora (Jugador _ mano _ _) = puedeGanarMenosDiez mano || puedeGanarSobraUnaComputadora mano
+puedeGanarComputadora (Jugador _ mano _ _ _) = puedeGanarMenosDiez mano || puedeGanarSobraUnaComputadora mano
 
 puedeGanarMenosDiez :: [Carta] -> Bool
 puedeGanarMenosDiez mano =  do
@@ -245,7 +263,7 @@ removeItem x (y:ys) | x == y    = removeItem x ys
 					
 
 jugadaComputadora :: EstadoDeJuego -> EstadoDeJuego
-jugadaComputadora estado@(jugador, (Jugador nombre mano seguras ss), mazo, pilaDescartadas) = do
+jugadaComputadora estado@(jugador, (Jugador nombre mano seguras ss puntos), mazo, pilaDescartadas) = do
 -- 	VER SI LA DE DESCARTADA SIRVE
 	let cLevantada = ultimaCartaDescartada pilaDescartadas
 	let mano' = [cLevantada] ++ mano
@@ -259,9 +277,9 @@ jugadaComputadora estado@(jugador, (Jugador nombre mano seguras ss), mazo, pilaD
 		let sobrantes = [carta | carta <- mano', carta `notElem` (seguras' `union` ss')] -- TODAS LAS QUE NO ESTAN EN SEGURAS Y SS
 		if length sobrantes > 0
 		then do
-			descartarSobrante (jugador, (Jugador nombre mano' seguras' ss'), mazo, pilaDescartadas') sobrantes
+			descartarSobrante (jugador, (Jugador nombre mano' seguras' ss' puntos), mazo, pilaDescartadas') sobrantes
 		else do
-			descartarDeSemiSeguras (jugador, (Jugador nombre mano' seguras' ss'), mazo, pilaDescartadas') cLevantada
+			descartarDeSemiSeguras (jugador, (Jugador nombre mano' seguras' ss' puntos), mazo, pilaDescartadas') cLevantada
 								
 	else do
 		let combPosibles = [tres | tres <- combinaciones 3 (mano'\\seguras)\\(combinaciones 2 ss), esBuena tres && cLevantada `elem` tres]
@@ -277,24 +295,24 @@ jugadaComputadora estado@(jugador, (Jugador nombre mano seguras ss), mazo, pilaD
 
 			if length sobrantes > 0
 			then do
-				descartarSobrante (jugador, (Jugador nombre mano' seguras' ss''), mazo, pilaDescartadas') sobrantes
+				descartarSobrante (jugador, (Jugador nombre mano' seguras' ss'' puntos), mazo, pilaDescartadas') sobrantes
 			else do
-				descartarDeSemiSeguras (jugador, (Jugador nombre mano' seguras' ss''), mazo, pilaDescartadas') cLevantada
+				descartarDeSemiSeguras (jugador, (Jugador nombre mano' seguras' ss'' puntos), mazo, pilaDescartadas') cLevantada
 		else cartaDesconocidaComputadora (estado) 
 	
 	
 descartarSobrante :: EstadoDeJuego -> [Carta]-> EstadoDeJuego
-descartarSobrante estado@(jugador, (Jugador nombre mano seguras ss), mazo, pilaDescartadas) sobrantes = do
+descartarSobrante estado@(jugador, (Jugador nombre mano seguras ss puntos), mazo, pilaDescartadas) sobrantes = do
 	let cartasOrdenadas = ordenarCartasNumero sobrantes
 	let descartada = last (cartasOrdenadas) --SACAR UNA (EN LO POSIBLE LA MAS GRANDE)
 	let mano' = init (cartasOrdenadas) ++ seguras ++ ss  -- y poner el resto en mano''
 	let pilaDescartadas' = [descartada] ++ pilaDescartadas
-	let computadora' = (Jugador nombre mano' seguras ss)
+	let computadora' = (Jugador nombre mano' seguras ss puntos)
 	(jugador, computadora', mazo, pilaDescartadas')
 	
 	
 descartarDeSemiSeguras ::  EstadoDeJuego -> Carta -> EstadoDeJuego
-descartarDeSemiSeguras estado@(jugador, (Jugador nombre mano seguras ss), mazo, pilaDescartadas) cLevantada = do	
+descartarDeSemiSeguras estado@(jugador, (Jugador nombre mano seguras ss puntos), mazo, pilaDescartadas) cLevantada = do	
 	if length ss >= 1 then do
 		let cartasOrdenadas = ordenarCartasNumero ss
 		let descartada = last (cartasOrdenadas)
@@ -306,16 +324,16 @@ descartarDeSemiSeguras estado@(jugador, (Jugador nombre mano seguras ss), mazo, 
 		let ss' = [carta | carta <- cartasOrdenadas, not (carta == descartada), not (carta == aDejar) ] 
 		let pilaDescartadas' = [descartada] ++ pilaDescartadas
 		let mano' = seguras ++ ss' ++ [aDejar]
-		let computadora' = (Jugador nombre mano' seguras ss')
+		let computadora' = (Jugador nombre mano' seguras ss' puntos)
 		(jugador, computadora', mazo, pilaDescartadas')
 	else do
 		let pilaDescartadas' = [cLevantada] ++ pilaDescartadas
 		let mano' = [carta | carta <- mano, not (carta == cLevantada)]
-		let computadora' = (Jugador nombre mano' seguras ss)
+		let computadora' = (Jugador nombre mano' seguras ss puntos)
 		(jugador, computadora', mazo, pilaDescartadas')	
 	
 cartaDesconocidaComputadora :: EstadoDeJuego -> EstadoDeJuego
-cartaDesconocidaComputadora estado@(jugador, (Jugador nombre mano seguras ss), mazo, pilaDescartadas) = do
+cartaDesconocidaComputadora estado@(jugador, (Jugador nombre mano seguras ss puntos), mazo, pilaDescartadas) = do
 	let cLevantada = cartaDesconocida mazo
 	let mano' = [cLevantada] ++ mano
 	let mazo' = tail mazo
@@ -329,9 +347,9 @@ cartaDesconocidaComputadora estado@(jugador, (Jugador nombre mano seguras ss), m
 		let sobrantes = (mano' \\ seguras') \\ ss'
 		if length sobrantes > 0
 		then do
-			descartarSobrante (jugador, (Jugador nombre mano' seguras' ss'), mazo', pilaDescartadas) sobrantes
+			descartarSobrante (jugador, (Jugador nombre mano' seguras' ss' puntos), mazo', pilaDescartadas) sobrantes
 		else do
-			descartarDeSemiSeguras (jugador, (Jugador nombre mano' seguras' ss'), mazo', pilaDescartadas) cLevantada
+			descartarDeSemiSeguras (jugador, (Jugador nombre mano' seguras' ss' puntos), mazo', pilaDescartadas) cLevantada
 	else do
 		let combPosibles = [tres | tres <- combinaciones 3 (mano'\\seguras)\\(combinaciones 2 ss), esBuena tres &&  cLevantada `elem` tres]
 		if length combPosibles >=1
@@ -345,9 +363,9 @@ cartaDesconocidaComputadora estado@(jugador, (Jugador nombre mano seguras ss), m
 			let sobrantes = [carta | carta <- mano', carta `notElem` (seguras' `union` ss'')] -- TODAS LAS QUE NO ESTAN EN SEGURAS Y SS
 			if length sobrantes > 0
 			then do
-				descartarSobrante (jugador, (Jugador nombre mano' seguras' ss''), mazo', pilaDescartadas) sobrantes
+				descartarSobrante (jugador, (Jugador nombre mano' seguras' ss'' puntos), mazo', pilaDescartadas) sobrantes
 			else do
-				descartarDeSemiSeguras (jugador, (Jugador nombre mano' seguras' ss''), mazo', pilaDescartadas) cLevantada
+				descartarDeSemiSeguras (jugador, (Jugador nombre mano' seguras' ss'' puntos), mazo', pilaDescartadas) cLevantada
 		else do
 			let resto = (mano' \\ seguras) \\ ss
 			let combinaciones2 = [carta | carta <- combinaciones 2 resto, esSemiSegura carta]
@@ -362,15 +380,15 @@ cartaDesconocidaComputadora estado@(jugador, (Jugador nombre mano seguras ss), m
 				let descartada = last restoOrdenado
 				let pilaDescartadas' = [descartada] ++ pilaDescartadas
 				let mano'' = [carta | carta <- mano', not (carta == descartada)]
-				(jugador, (Jugador nombre mano'' seguras ss'), mazo', pilaDescartadas')
+				(jugador, (Jugador nombre mano'' seguras ss' puntos), mazo', pilaDescartadas')
 			else do
 				let ss' = ss ++ combElegida
-				descartarDeSemiSeguras (jugador, (Jugador nombre mano' seguras ss'), mazo', pilaDescartadas) cLevantada
+				descartarDeSemiSeguras (jugador, (Jugador nombre mano' seguras ss' puntos), mazo', pilaDescartadas) cLevantada
 			
 						
 	
 configurarComputadora :: Jugador -> Jugador
-configurarComputadora (Jugador nombre mano seguras ss) = do
+configurarComputadora (Jugador nombre mano seguras ss puntos) = do
 	let combinaciones4 = [carta | carta <- combinaciones 4 mano, esBuena carta]
 	let todasCombinaciones4 = removerDuplicados (concat combinaciones4)
 	let difCombinaciones4 = mano \\ todasCombinaciones4
@@ -389,7 +407,7 @@ configurarComputadora (Jugador nombre mano seguras ss) = do
 	-- DEBERIAMOS VER ESTO --> ME HIZO UN SSEGURAS DE 3
 	let combinaciones2 = [carta | carta <- combinaciones 2 sobrantes', esSemiSegura carta]
 	let ss' = removerDuplicados (concat combinaciones2)
-	(Jugador nombre mano seguras' ss')
+	(Jugador nombre mano seguras' ss' puntos)
 
 
 removerDuplicados :: Eq a => [a] -> [a]
@@ -398,8 +416,43 @@ removerDuplicados = foldl (\visto x -> if x `elem` visto
 	else visto ++ [x]) []
 	
 	
-mostrarManoCompu :: EstadoDeJuego -> String
-mostrarManoCompu (_, (Jugador _ mano _ _), _, _) = show mano
+mostrarManoCompu :: Jugador -> String
+mostrarManoCompu (Jugador _ mano _ _ _) = show mano
 
 devolverComputadoraEstado :: EstadoDeJuego -> Jugador
 devolverComputadoraEstado (_, computadora, _, _) = computadora
+
+
+calcularPuntos :: Jugador -> Int
+calcularPuntos (Jugador _ mano seguras _ puntos)= do
+	-- IF DA MENOS 10 -> 0 porque es el que no corto
+	if puedeGanarMenosDiez mano 
+	then 0
+	else if puedeGanarSobraUna mano 
+		then buscarCombinacionesRestoMasBajo mano
+		else  -- ELSE -> CALCULAR PUNTAJE (POSIBILIDADES -> DE CUATRO, DE TRES Y NADA)
+			calcularDependiendoCombinacion mano 4
+
+calcularDependiendoCombinacion :: [Carta] -> Int -> Int
+calcularDependiendoCombinacion mano 2 = sum (map obtenerValorNumerico mano)
+calcularDependiendoCombinacion mano nCartas = do
+	-- Si n == 4 ELIJE 1 SOLA COMBINACION PORQUE SINO HUBIESE ENTRADO EN puedeGanarMenosDiez
+	-- Si n == 3 ELIJE 1 SOLA COMBINACION PORQUE SINO HUBIESE ENTRADO EN puedeGanarSobraUna
+	let combinacionesPosibles = [ (CombinacionPuntaje comb suma) | comb <- combinaciones nCartas mano, esBuena comb, let suma = sum (map obtenerValorNumerico comb) ]
+	if length combinacionesPosibles >= 1 
+	then do
+		let combinacionesPosiblesOrdenadas = ordernarCombinacionPuntaje combinacionesPosibles
+		let combinacionMayor = combinacion (last combinacionesPosiblesOrdenadas)
+		sum (map obtenerValorNumerico (mano\\combinacionMayor))
+	else
+		calcularDependiendoCombinacion mano (nCartas-1)
+		
+buscarCombinacionesRestoMasBajo :: [Carta] -> Int
+buscarCombinacionesRestoMasBajo mano =  do
+										let buenasCombinaciones mano' = [ (tres, tres'') | tres <- combinaciones 3 mano',let tres' = mano' \\ tres, tres'' <- combinaciones 3 tres', esBuena tres, esBuena tres'']
+										let restos mano' = concat [ (mano'\\tres)\\tres'' | tres <- combinaciones 3 mano',let tres' = mano' \\ tres, tres'' <- combinaciones 3 tres', esBuena tres, esBuena tres'']
+										obtenerValorNumerico (head (ordenarCartasNumero (restos mano)))
+--										
+			
+ordernarCombinacionPuntaje :: [CombinacionPuntaje] -> [CombinacionPuntaje]
+ordernarCombinacionPuntaje = sortBy (comparing suma)
