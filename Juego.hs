@@ -7,8 +7,8 @@ puntajeMaximo = 100
 
 main :: IO ()
 main = do
-    hSetBuffering stdin LineBuffering
     hSetEncoding stdout utf8
+    hSetBuffering stdin LineBuffering
     estadoInicial <- configurar
     jugar estadoInicial 1 0
 
