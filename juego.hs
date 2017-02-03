@@ -11,7 +11,6 @@ main = do
     estadoInicial <- configurar
     jugar estadoInicial 1 0
 
-
 configurar :: IO (EstadoDeJuego)
 configurar = do
     -- mezclar cartas

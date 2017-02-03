@@ -7,6 +7,7 @@ import Data.Array.ST
 import Control.Monad
 import Control.Monad.ST
 import Data.STRef
+
 --Creacion mazo de 48 cartas con simbolos de poker pero sin los 4 literales (A, J , Q, K) 
 --Se ordenan de menor a mayor rango de la siguiente forma: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 y 12 
 
