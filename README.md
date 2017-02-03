@@ -51,5 +51,36 @@ El puntaje que obtendrá cada jugador cuando alguien corte se basa a las siguien
   3. Si el jugador tiene combinaciones de 3 o 4 cartas, estas no se suman al puntaje de la ronda, que será la suma de las cartas que no se encuentarn combinadas.
 
 
+## Cómo compilar y ejecutar el programa
 
+El repositorio cuenta con un archivo **Final.cabal** que posee las configuraciones necesarias para compilar el programa.
+
+### Para compilar:
+#### En Terminal (Unix):
+```
+username$ cd path/to/file
+\path\to\file username$ cabal install -j
+```
+
+#### Command Prompt (Windows):
+```
+C:\username> cd path\to\file
+C:\path\to\file> cabal install -j
+```
+
+### Para ejecutar:
+#### En Terminal (Unix):
+```
+\path\to\file username$ dist/build/Final/Final
+```
+
+#### Command Prompt (Windows):
+```
+C:\path\to\file> chcp 65001 
+C:\path\to\file> dist\build\Final\Final.exe
+```
+
+En windows, se agrega 'chcp 65001' para poder mostrar caracteres de ASCII-Extendido.
+
+Ademas, en la siguiente carpeta: [Final](https://github.com/gastonframirez/PD16/tree/master/dist/build/Final) se encuentran los ejecutables para Windows, Linux y MacOs.
 
