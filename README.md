@@ -84,3 +84,5 @@ En windows, se agrega 'chcp 65001' para poder mostrar caracteres de ASCII-Extend
 
 Ademas, en la siguiente carpeta: [Final](https://github.com/gastonframirez/PD16/tree/master/dist/build/Final) se encuentran los ejecutables para Windows, Linux y MacOs.
 
+Una vez ejecutado, el programa te guiará para que comiences a jugar.
+
