@@ -41,26 +41,14 @@ En cada mano, cada jugador tiene como objetivo intentar combinar sus cartas form
 
 Un jugador en cualquiera de sus turnos, en el momento de deshacerse de una carta, puede cortar si tuviera todas las cartas combinadas (sea en dos grupos, de tres y cuatro cartas, o en un único grupo de 7 cartas) o si sólo le quedara una carta sin combinar.
 
-#### Recuento de la mano
+##### Recuento de la mano
 El puntaje que obtendrá cada jugador cuando alguien corte se basa a las siguientes reglas:
 
-  1. Con una escalera de siete cartas (chinchón) ganará el juego directamente.
+  1. Si el jugador que cortó tiene una escalera de siete cartas (chinchón), ganará el juego directamente.
   2. Si el jugador tiene dos grupos de cartas (uno de tres y otro de cuatro):
     * Si el jugador es el que cortó, este obtendrá -10 puntos.
     * Sino, obtendrá 0 puntos.
-  
-
-cada cual sumará los puntos de aquellas que siguiera teniendo sin colocar, pasando a aumentar estos puntos el tanteo total de la partida.
-
-#### Eliminaciones y reenganches
-Cuando un jugador supera el número de puntos previamente establecido como límite de la partida, es eliminado de la misma. Si en el momento de abrir la partida, la misma se hubiera configurado con un determinado número de reenganches, en el momento de ser eliminado, cada jugador podrá reincorporarse a la partida tantas veces como se hubiera determinado, haciéndolo con la puntuación de aquel jugador que tuviera la máxima puntuación.
-Si un jugador logra que todos los rivales sobrepasen la puntuación establecida en una mano, gana aunque el resto no haya gastado sus reenganches.
-Cuando un jugador se encuentra cercano al límite de la puntuación de eliminación, no puede cerrar manteniendo en la mano una carta con la que sobrepase dicha puntuación.
-En caso de partidas entre dos jugadores no son posibles los reenganches.
-
-#### Final de partida
-En el Chinchón vence la partida aquel jugador que hubiera conseguido eliminar a todos los demás jugadores.
-
+  3. Si el jugador tiene combinaciones de 3 o 4 cartas, estas no se suman al puntaje de la ronda, que será la suma de las cartas que no se encuentarn combinadas.
 
 
 
