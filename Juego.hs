@@ -67,9 +67,9 @@ jugar estado@(jugador, computadora, mazo, pilaDescartadas) turno corto  =
     else
         if (puntos jugador > puntajeMaximo) && (puntos computadora < puntajeMaximo)
         then do
-            putStrLn $ "Perdiste! La computadora ganó el juego! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
+            putStrLn $ "Perdiste! La computadora ganó el juego con Chinchón! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
         else if (puntos jugador < puntajeMaximo) && (puntos computadora > puntajeMaximo)
-        then putStrLn $ "Ganaste! La computadora perdió el juego! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
+        then putStrLn $ "Ganaste con Chinchón! La computadora perdió el juego! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
         else if (puntos jugador > puntajeMaximo) && (puntos computadora > puntajeMaximo)
         then if (puntos jugador > puntos computadora)
             then putStrLn $ "Perdiste! La computadora ganó el juego! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
