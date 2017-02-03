@@ -57,7 +57,7 @@ executable Final
   -- other-extensions:    
   
   -- Other library packages from which modules are imported.
-  build-depends:       base >=4.9 && <4.10, random, array
+  build-depends:       base, random, array
   
   -- Directories containing source files.
   -- hs-source-dirs:      
