@@ -393,17 +393,11 @@ configurarComputadora (Jugador nombre mano seguras ss puntos) = do
     let combinaciones4 = [carta | carta <- combinaciones 4 mano, esBuena carta]
     let todasCombinaciones4 = removerDuplicados (concat combinaciones4)
     let difCombinaciones4 = mano \\ todasCombinaciones4
-    let sobrantes = do 
-        if length difCombinaciones4 >= 1
-        then difCombinaciones4
-        else mano
+    let sobrantes = if length difCombinaciones4 >= 1 then difCombinaciones4 else mano
     let combinaciones3 = [carta | carta <- combinaciones 3 sobrantes, esBuena carta]
     let todasCombinaciones3 = removerDuplicados (concat combinaciones3)
     let difCombinaciones3 = sobrantes \\ todasCombinaciones3
-    let sobrantes' = do 
-        if length difCombinaciones3 >= 1
-        then difCombinaciones3
-        else sobrantes
+    let sobrantes' = if length difCombinaciones3 >= 1 then difCombinaciones3 else sobrantes
     let seguras' = todasCombinaciones4 ++ todasCombinaciones3
     -- DEBERIAMOS VER ESTO --> ME HIZO UN SSEGURAS DE 3
     let combinaciones2 = [carta | carta <- combinaciones 2 sobrantes', esSemiSegura carta]
