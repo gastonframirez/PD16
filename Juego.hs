@@ -58,120 +58,93 @@ esPar 0 = True
 esPar n = n `rem` 2 == 0
 
 jugar :: EstadoDeJuego -> Int -> Int -> IO ()
-jugar estado@(jugador, computadora, mazo, pilaDescartadas) turno corto  =
-    if length mazo == 1
-    then do    
+jugar estado@(jugador, computadora, mazo, pilaDescartadas) turno corto 
+    | length mazo == 1 = do
         let pilaDescartadas' = head pilaDescartadas
         mazo' <- shuffleIO (tail pilaDescartadas)
         jugar (jugador, computadora, mazo', [pilaDescartadas']) turno corto
-    else
-        if (puntos jugador > puntajeMaximo) && (puntos computadora < puntajeMaximo)
-        then do
-            putStrLn $ "Perdiste! La computadora ganó el juego con Chinchón! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
-        else if (puntos jugador < puntajeMaximo) && (puntos computadora > puntajeMaximo)
-        then putStrLn $ "Ganaste con Chinchón! La computadora perdió el juego! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
-        else if (puntos jugador > puntajeMaximo) && (puntos computadora > puntajeMaximo)
-        then if (puntos jugador > puntos computadora)
-            then putStrLn $ "Perdiste! La computadora ganó el juego! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
-            else putStrLn $ "Ganaste! La computadora perdió el juego! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
-        else 
-            if corto == 1
-                then 
-                if esChinchon (mano jugador)
-                    then putStrLn $ "Ganaste! La computadora perdió el juego! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora + puntajeMaximo)
-                else
-                    if puedeGanarMenosDiez (mano jugador)
-                        then do
-                            putStrLn $ "Ganaste la ronda con menos 10! " ++ mostrarMano estado
-                            let puntosComputadora = calcularPuntos computadora
-                            let puntosTotalComputadora = puntos computadora + puntosComputadora
-                            let puntosTotalJugador = puntos jugador - 10
-                            let puntosJugador = calcularPuntos jugador
-                            putStrLn $ "\nLa computadora suma: " ++ show puntosComputadora
-                            putStrLn $ "\n\n\n"
-                            let computadora' = (Jugador (nombre computadora) (mano computadora) (seguras computadora) (semiSeguras computadora) puntosTotalComputadora)
-                            let jugador' = (Jugador (nombre jugador) (mano jugador) (seguras jugador) (semiSeguras jugador) puntosTotalJugador)
-                            estado' <- reConfigurar jugador' computadora'
-                            jugar estado' turno 0
---                            (jugador', computadora', mazo, pilaDescartadas) turno 0
-                    else 
-                        if puedeGanarSobraUna (mano jugador) 
-                            then do 
-                                let puntosComputadora = calcularPuntos computadora
-                                let puntosTotalComputadora = puntos computadora + puntosComputadora
-                                let puntosJugador = calcularPuntos jugador
-                                let puntosTotalJugador = puntos jugador + puntosJugador
+    | corto == 1 && noPuedeCortar (mano jugador) = do
+        putStrLn $ "No podés cortar todavia! Intentá cuando tengas combinaciones.\n"
+        jugar estado (turno) 0
+    | corto == 2 && noPuedeCortar (mano computadora) = jugar estado (turno) 0
+    | (puntos jugador > puntajeMaximo) && (puntos computadora < puntajeMaximo) = putStrLn $ "Perdiste! La computadora ganó el juego con Chinchón! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
+    | (puntos jugador < puntajeMaximo) && (puntos computadora > puntajeMaximo) = putStrLn $ "Ganaste con Chinchón! La computadora perdió el juego! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
+    | (puntos jugador > puntajeMaximo) && (puntos computadora > puntajeMaximo) && (puntos jugador > puntos computadora) = putStrLn $ "Perdiste! La computadora ganó el juego! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
+    | (puntos jugador > puntajeMaximo) && (puntos computadora > puntajeMaximo) && not (puntos jugador > puntos computadora) = putStrLn $ "Ganaste! La computadora perdió el juego! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
+    | corto == 1 &&  esChinchon (mano jugador) = putStrLn $ "Ganaste! La computadora perdió el juego! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora + puntajeMaximo)
+    | corto == 1 && puedeGanarMenosDiez (mano jugador) = do
+        putStrLn $ "Ganaste la ronda con menos 10! " ++ mostrarMano estado
+        let puntosComputadora = calcularPuntos computadora
+        let puntosTotalComputadora = puntos computadora + puntosComputadora
+        let puntosTotalJugador = puntos jugador - 10
+        let puntosJugador = calcularPuntos jugador
+        putStrLn $ "\nLa computadora suma: " ++ show puntosComputadora
+        putStrLn $ "\n\n\n"
+        let computadora' = (Jugador (nombre computadora) (mano computadora) (seguras computadora) (semiSeguras computadora) puntosTotalComputadora)
+        let jugador' = (Jugador (nombre jugador) (mano jugador) (seguras jugador) (semiSeguras jugador) puntosTotalJugador)
+        estado' <- reConfigurar jugador' computadora'
+        jugar estado' turno 0
+    | corto == 1 && puedeGanarSobraUna (mano jugador) = do 
+        let puntosComputadora = calcularPuntos computadora
+        let puntosTotalComputadora = puntos computadora + puntosComputadora
+        let puntosJugador = calcularPuntos jugador
+        let puntosTotalJugador = puntos jugador + puntosJugador
 
-                                putStrLn $ "Ganaste la ronda! Sumas:  " ++ show puntosJugador 
-                                putStrLn $ "\nLa computadora suma: " ++ show puntosComputadora
-                                putStrLn $ "\n\n\n"
-                                let computadora' = (Jugador (nombre computadora) (mano computadora) (seguras computadora) (semiSeguras computadora) puntosTotalComputadora)
-                                let jugador' = (Jugador (nombre jugador) (mano jugador) (seguras jugador) (semiSeguras jugador) puntosTotalJugador)
-                                estado' <- reConfigurar jugador' computadora'
-                                jugar estado' turno 0                        
-                        else do
-                        putStrLn $ "No podés cortar todavia! Intentá cuando tengas combinaciones.\n"
-                        jugar estado (turno) 0
-                
-            else if corto == 2 
-                then 
-                if esChinchon (mano computadora)
-                    then putStrLn $ "Perdiste! La computadora ganó el juego! \nTus puntos: " ++ show (puntos jugador + puntajeMaximo) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
-                else
-                    if puedeGanarMenosDiez (mano computadora)
-                        then do
-                        putStrLn $ "Computadora gano la ronda, con menos 10! "
-                        let puntosComputadora = calcularPuntos computadora
-                        let puntosTotalComputadora = puntos computadora - 10
-                        let puntosJugador = calcularPuntos jugador
-                        let puntosTotalJugador = puntos jugador + puntosJugador
-                        putStrLn $ "\nVos sumás: " ++ show puntosJugador
-                        putStrLn $ "\n\n\n"
-                        let computadora' = (Jugador (nombre computadora) (mano computadora) (seguras computadora) (semiSeguras computadora) puntosTotalComputadora)
-                        let jugador' = (Jugador (nombre jugador) (mano jugador) (seguras jugador) (semiSeguras jugador) puntosTotalJugador)
+        putStrLn $ "Ganaste la ronda! Sumas:  " ++ show puntosJugador 
+        putStrLn $ "\nLa computadora suma: " ++ show puntosComputadora
+        putStrLn $ "\n\n\n"
+        let computadora' = (Jugador (nombre computadora) (mano computadora) (seguras computadora) (semiSeguras computadora) puntosTotalComputadora)
+        let jugador' = (Jugador (nombre jugador) (mano jugador) (seguras jugador) (semiSeguras jugador) puntosTotalJugador)
+        estado' <- reConfigurar jugador' computadora'
+        jugar estado' turno 0   
 
-                        estado' <- reConfigurar jugador' computadora'
-                        jugar estado' turno 0
-                    else 
-                        if puedeGanarSobraUnaComputadora (mano computadora)
-                            then do
-                                let puntosComputadora = calcularPuntos computadora
-                                let puntosTotalComputadora = puntos computadora + puntosComputadora
-                                let puntosJugador = calcularPuntos jugador
-                                let puntosTotalJugador = puntos jugador + puntosJugador
-                                putStrLn $ "Computadora gano la ronda, suma: " ++ show puntosComputadora
-                                putStrLn $ "\nVos sumás: " ++ show puntosJugador
-                                let computadora' = (Jugador (nombre computadora) (mano computadora) (seguras computadora) (semiSeguras computadora) puntosTotalComputadora)
-                                let jugador' = (Jugador (nombre jugador) (mano jugador) (seguras jugador) (semiSeguras jugador) puntosTotalJugador)
-                                estado' <- reConfigurar jugador' computadora'
-                                jugar estado' turno 0
-                        else jugar estado (turno) 0
-                
-            else do
-                if not (esPar turno)
-                then do
-                    putStrLn $ "\nEstado Compu Despues:" ++ show computadora
-                    putStrLn $ "\nDescartadas por Compu:" ++ show pilaDescartadas
-                    estado' <- levantarCarta estado
-                    putStrLn $ mostrarMano estado'
-                    putStrLn "Que querés hacer ahora? \n  1) Tirar carta\n  2) Tirar y cortar"
-                    respuesta <- readLn
-                    estado'' <- descartarCarta estado'
-                    putStrLn $ mostrarMano estado''
-                    if respuesta == 2
-                        then jugar estado'' (turno) 1
-                    else
-                        jugar estado'' (turno+1) 0
-                else do
---                    putStrLn $ "\nDescartadas por user:" ++ show pilaDescartadas
---                    putStrLn $ "Primera mazo: " ++ show (head mazo)
---                    putStrLn $ "\nEstado Compu:" ++ show computadora
-                    putStrLn $ "Mano Compu Antes: " ++ mostrarManoCompu computadora
-                    let estado' = jugadaComputadora estado
-                    let computadoraDespues = devolverComputadoraEstado estado'
-                    if puedeGanarComputadora computadoraDespues
-                    then  jugar estado' (turno) 2
-                    else jugar estado' (turno+1) 0
+    | corto == 2 &&  esChinchon (mano computadora) = putStrLn $ "Perdiste! La computadora ganó el juego! \nTus puntos: " ++ show (puntos jugador + puntajeMaximo) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
+    | corto == 2 && puedeGanarMenosDiez (mano computadora) = do
+        putStrLn $ "Computadora gano la ronda, con menos 10! "
+        let puntosComputadora = calcularPuntos computadora
+        let puntosTotalComputadora = puntos computadora - 10
+        let puntosJugador = calcularPuntos jugador
+        let puntosTotalJugador = puntos jugador + puntosJugador
+        putStrLn $ "\nVos sumás: " ++ show puntosJugador
+        putStrLn $ "\n\n\n"
+        let computadora' = (Jugador (nombre computadora) (mano computadora) (seguras computadora) (semiSeguras computadora) puntosTotalComputadora)
+        let jugador' = (Jugador (nombre jugador) (mano jugador) (seguras jugador) (semiSeguras jugador) puntosTotalJugador)
+
+        estado' <- reConfigurar jugador' computadora'
+        jugar estado' turno 0
+    | corto == 2 && puedeGanarSobraUna (mano computadora) = do
+        let puntosComputadora = calcularPuntos computadora
+        let puntosTotalComputadora = puntos computadora + puntosComputadora
+        let puntosJugador = calcularPuntos jugador
+        let puntosTotalJugador = puntos jugador + puntosJugador
+        putStrLn $ "Computadora gano la ronda, suma: " ++ show puntosComputadora
+        putStrLn $ "\nVos sumás: " ++ show puntosJugador
+        let computadora' = (Jugador (nombre computadora) (mano computadora) (seguras computadora) (semiSeguras computadora) puntosTotalComputadora)
+        let jugador' = (Jugador (nombre jugador) (mano jugador) (seguras jugador) (semiSeguras jugador) puntosTotalJugador)
+        estado' <- reConfigurar jugador' computadora'
+        jugar estado' turno 0 
+    
+    | not (esPar turno) = do
+        putStrLn $ "\nEstado Compu Despues:" ++ show computadora
+        putStrLn $ "\nDescartadas por Compu:" ++ show pilaDescartadas
+        estado' <- levantarCarta estado
+        putStrLn $ mostrarMano estado'
+        putStrLn "Que querés hacer ahora? \n  1) Tirar carta\n  2) Tirar y cortar"
+        respuesta <- readLn
+        estado'' <- descartarCarta estado'
+        putStrLn $ mostrarMano estado''
+        if respuesta == 2
+            then jugar estado'' (turno) 1
+        else
+            jugar estado'' (turno+1) 0
+      
+    | otherwise = do
+        putStrLn $ "Mano Compu Antes: " ++ mostrarManoCompu computadora
+        let estado' = jugadaComputadora estado
+        let computadoraDespues = devolverComputadoraEstado estado'
+        if puedeGanarComputadora computadoraDespues
+        then  jugar estado' (turno) 2
+        else jugar estado' (turno+1) 0
 
 
 levantarCarta :: EstadoDeJuego -> IO EstadoDeJuego
