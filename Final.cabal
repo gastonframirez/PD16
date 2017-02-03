@@ -48,7 +48,7 @@ cabal-version:       >=1.10
 
 executable Final
   -- .hs or .lhs file containing the Main module.
-  main-is:             juego.hs
+  main-is:             Juego.hs
   
   -- Modules included in this executable, other than Main.
   other-modules: Chinchon
