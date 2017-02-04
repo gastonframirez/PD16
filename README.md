@@ -86,3 +86,10 @@ Ademas, en la siguiente carpeta: [Final](https://github.com/gastonframirez/PD16/
 
 Una vez ejecutado, el programa te guiará para que comiences a jugar.
 
+## Aprendizaje
+
+Nuestro objetivo para este proyecto era poder practicar y perfeccionar lo aprendido en clase con respecto al lenguaje de programación **Haskell**. Además, en el proceso tuvimos que pensar en cómo "pensaría" la computadora su estrategia, así teniendo que usar una AI básica para llevarlo a cabo. A lo largo del trabajo, practicamos el uso de guardas, patrones, modulos, estructuras de datos y tantos otros conceptos aprendidos en clases.
+
+En un principio al elegir el "Chinchon", creímos que no representaría grandes problemas de programación, que con tan sólo encontrar escaleras y grupos del mismo número se resolvería. Un par de funciones **sort** y **`elem`** lo resolverían junto con las famosas map y filter, pero eso estaba lejos de ser verdad. Mientras la programación avanzaba, nos dimos cuenta cómo cada vez que había que decidir que carta levantar, toda la estrategia podía llegar a cambiar, y esto podía cambiar incluso ronda tras ronda. Esto genero un desafío no sólo del lenguaje sino también de AI, en el que tuvimos que pensar en todos los escenarios posibles con cada carta elegida.
+
+Finalmente, logramos conseguir nuestro jugador "ideal" (la computadora), que pudiera pensar como un humano, analizando qué le conviene y qué no, y cuál sería su mejor estrategia para terminar el juego con el mejor puntaje posible.
