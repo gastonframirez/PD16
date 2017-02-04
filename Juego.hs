@@ -61,13 +61,12 @@ jugar :: EstadoDeJuego -> Int -> Int -> IO ()
 jugar estado@(jugador, computadora, mazo, pilaDescartadas) turno corto 
     | length mazo == 0 = do
         let pilaDescartadas' = head pilaDescartadas
-        putStrLn $ show pilaDescartadas'
         mazo' <- shuffleIO (tail pilaDescartadas)
         jugar (jugador, computadora,  mazo', [pilaDescartadas']) turno corto
     | corto == 1 && noPuedeCortar (mano jugador) = do
         putStrLn $ "No podés cortar todavia! Intentá cuando tengas combinaciones.\n"
-        jugar estado (turno) 0
-    | corto == 2 && noPuedeCortar (mano computadora) = jugar estado (turno) 0
+        jugar estado (turno+1) 0
+    | corto == 2 && noPuedeCortar (mano computadora) = jugar estado (turno+1) 0
     | (puntos jugador > puntajeMaximo) && (puntos computadora < puntajeMaximo) = putStrLn $ "Perdiste! La computadora ganó el juego con Chinchón! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
     | (puntos jugador < puntajeMaximo) && (puntos computadora > puntajeMaximo) = putStrLn $ "Ganaste con Chinchón! La computadora perdió el juego! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
     | (puntos jugador > puntajeMaximo) && (puntos computadora > puntajeMaximo) && (puntos jugador > puntos computadora) = putStrLn $ "Perdiste! La computadora ganó el juego! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
@@ -141,7 +140,6 @@ jugar estado@(jugador, computadora, mazo, pilaDescartadas) turno corto
       
     | otherwise = do
         putStrLn $ "Mano Compu Antes: " ++ mostrarManoCompu computadora
-        putStrLn $ show mazo
         let estado' = jugadaComputadora estado
         let computadoraDespues = devolverComputadoraEstado estado'
         if puedeGanarComputadora computadoraDespues
