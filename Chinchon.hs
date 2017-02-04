@@ -332,8 +332,11 @@ descartarDeSemiSeguras estado@(jugador, (Jugador nombre mano seguras ss puntos),
         (jugador, computadora', mazo, pilaDescartadas')
     else do
         let pilaDescartadas' = [cLevantada] ++ pilaDescartadas
+        let combinacionCLevantada = [comb | comb <- combinaciones 3 seguras, esBuena comb, cLevantada `elem` comb]
+        let seguras' = seguras \\ (head combinacionCLevantada)
+        let ss' = ss ++ ((head combinacionCLevantada) \\ [cLevantada])
         let mano' = [carta | carta <- mano, not (carta == cLevantada)]
-        let computadora' = (Jugador nombre mano' seguras ss puntos)
+        let computadora' = (Jugador nombre mano' seguras' ss' 15)
         (jugador, computadora', mazo, pilaDescartadas')    
     
 cartaDesconocidaComputadora :: EstadoDeJuego -> EstadoDeJuego
