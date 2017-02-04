@@ -166,6 +166,8 @@ esBuena cartas = cartasEnSecuencia cartas || cartasEnGrupo cartas
 puedeGanar :: Jugador -> Bool
 puedeGanar (Jugador _ mano _ _ _) = puedeGanarMenosDiez mano || puedeGanarSobraUna mano
 
+noPuedeCortar :: [Carta] -> Bool
+noPuedeCortar mano = not (puedeGanar (Jugador "" mano [] [] 0))
 
 puedeGanarComputadora :: Jugador -> Bool
 puedeGanarComputadora (Jugador _ mano _ _ _) = puedeGanarMenosDiez mano || puedeGanarSobraUnaComputadora mano
@@ -419,14 +421,29 @@ devolverComputadoraEstado (_, computadora, _, _) = computadora
 
 
 calcularPuntos :: Jugador -> Int
-calcularPuntos (Jugador _ mano seguras _ puntos)= do
+calcularPuntos (Jugador _ mano seguras _ puntos)
     -- IF DA MENOS 10 -> 0 porque es el que no corto
-    if puedeGanarMenosDiez mano 
-    then 0
-    else if puedeGanarSobraUna mano 
-        then buscarCombinacionesRestoMasBajo mano
-        else  -- ELSE -> CALCULAR PUNTAJE (POSIBILIDADES -> DE CUATRO, DE TRES Y NADA)
-            calcularDependiendoCombinacion mano 4
+    | puedeGanarMenosDiez mano = 0
+    | puedeGanarSobraUna mano = buscarCombinacionesRestoMasBajo mano
+--    | tieneCinco mano = calcularRestoCombinaciones mano
+    | otherwise = calcularRestoCombinaciones mano
+
+     
+--tieneCinco :: [Carta] -> [Carta]
+--tieneCinco mano = do   
+--    let combinacionesPosibles = [comb | comb <- combinaciones 5 mano, tieneNSuc comb 5]
+--    length combinacionesPosibles >= 1
+
+calcularRestoCombinaciones :: [Carta] -> Int
+calcularRestoCombinaciones mano = do   
+    let mano' = ordenarCartasNumero mano
+    let combinacionesPosibles = [comb | comb <- combinaciones 5 mano', tieneNSuc comb 5]
+    if length combinacionesPosibles >= 1 
+    then do
+        let combinacionMayor = (last combinacionesPosibles)
+        sum (map obtenerValorNumerico (mano'\\combinacionMayor))
+    else
+        calcularDependiendoCombinacion mano 4
 
 calcularDependiendoCombinacion :: [Carta] -> Int -> Int
 calcularDependiendoCombinacion mano 2 = sum (map obtenerValorNumerico mano)
@@ -451,3 +468,4 @@ buscarCombinacionesRestoMasBajo mano =  do
             
 ordernarCombinacionPuntaje :: [CombinacionPuntaje] -> [CombinacionPuntaje]
 ordernarCombinacionPuntaje = sortBy (comparing suma)
+
