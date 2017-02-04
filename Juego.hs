@@ -59,10 +59,11 @@ esPar n = n `rem` 2 == 0
 
 jugar :: EstadoDeJuego -> Int -> Int -> IO ()
 jugar estado@(jugador, computadora, mazo, pilaDescartadas) turno corto 
-    | length mazo == 1 = do
+    | length mazo == 0 = do
         let pilaDescartadas' = head pilaDescartadas
+        putStrLn $ show pilaDescartadas'
         mazo' <- shuffleIO (tail pilaDescartadas)
-        jugar (jugador, computadora, mazo', [pilaDescartadas']) turno corto
+        jugar (jugador, computadora,  mazo', [pilaDescartadas']) turno corto
     | corto == 1 && noPuedeCortar (mano jugador) = do
         putStrLn $ "No podés cortar todavia! Intentá cuando tengas combinaciones.\n"
         jugar estado (turno) 0
@@ -140,6 +141,7 @@ jugar estado@(jugador, computadora, mazo, pilaDescartadas) turno corto
       
     | otherwise = do
         putStrLn $ "Mano Compu Antes: " ++ mostrarManoCompu computadora
+        putStrLn $ show mazo
         let estado' = jugadaComputadora estado
         let computadoraDespues = devolverComputadoraEstado estado'
         if puedeGanarComputadora computadoraDespues

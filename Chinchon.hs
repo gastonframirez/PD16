@@ -83,7 +83,7 @@ repartir (x:xs) = (x, xs)
 
 repartirCartaAJugador :: Mazo -> Jugador -> (Mazo, Jugador)
 repartirCartaAJugador [] _ = error "Mazo Vacio"
-repartirCartaAJugador m (Jugador nombre mano s ss puntos) = let (carta, m') = repartir m
+repartirCartaAJugador m (Jugador nombre mano s ss puntos) =  let (carta, m') = repartir m
                                                  in (m', Jugador nombre (carta:mano) s ss puntos)
 
 repartirNCartasAJugador :: Int -> Mazo -> Jugador -> (Mazo, Jugador)
@@ -129,6 +129,7 @@ tomarCartaDesconocida (jugador, computadora, mazo, pilaDescartadas) = (jugador',
                         where (mazo', jugador') = repartirCartaAJugador mazo jugador
 
 cartaDesconocida ::  [Carta] -> Carta
+cartaDesconocida [] = error "Mazo Vacio"
 cartaDesconocida mazoCartas = head mazoCartas
 
 tomarUltimaCartaDescartada :: EstadoDeJuego -> EstadoDeJuego
