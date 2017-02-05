@@ -34,8 +34,8 @@ Si las cartas del mazo se agotan antes de finalizar la mano, se toman las cartas
 
 En cada mano, cada jugador tiene como objetivo intentar combinar sus cartas formando grupos de al menos tres cartas unidas por uno de los siguientes criterios:
 
-  * Cartas del mismo número.
-  * Cartas que forman una escalera (un grupo de cartas del mismo palo con nùmeros correlativos).
+* Cartas del mismo número.
+* Cartas que forman una escalera (un grupo de cartas del mismo palo con nùmeros correlativos).
 
 ##### Cortar
 
@@ -44,11 +44,11 @@ Un jugador en cualquiera de sus turnos, en el momento de deshacerse de una carta
 ##### Recuento de la mano
 El puntaje que obtendrá cada jugador cuando alguien corte se basa a las siguientes reglas:
 
-  1. Si el jugador que cortó tiene una escalera de siete cartas (chinchón), ganará el juego directamente.
-  2. Si el jugador tiene dos grupos de cartas (uno de tres y otro de cuatro):
-    * Si el jugador es el que cortó, este obtendrá -10 puntos.
-    * Sino, obtendrá 0 puntos.
-  3. Si el jugador tiene combinaciones de 3 o 4 cartas, estas no se suman al puntaje de la ronda, que será la suma de las cartas que no se encuentarn combinadas.
+1. Si el jugador que cortó tiene una escalera de siete cartas (chinchón), ganará el juego directamente.
+2. Si el jugador tiene dos grupos de cartas (uno de tres y otro de cuatro):
+ * Si el jugador es el que cortó, este obtendrá -10 puntos.
+ * Sino, obtendrá 0 puntos.
+3. Si el jugador tiene combinaciones de 3 o 4 cartas, estas no se suman al puntaje de la ronda, que será la suma de las cartas que no se encuentarn combinadas.
 
 
 ## Cómo compilar y ejecutar el programa
