@@ -125,21 +125,16 @@ jugar estado@(jugador, computadora, mazo, pilaDescartadas) turno corto
         jugar estado' turno 0 
     
     | not (esPar turno) = do
-        putStrLn $ "\nEstado Compu Despues:" ++ show computadora
-        putStrLn $ "\nDescartadas por Compu:" ++ show pilaDescartadas
         estado' <- levantarCarta estado
-        putStrLn $ mostrarMano estado'
         putStrLn "Que querés hacer ahora? \n  1) Tirar carta\n  2) Tirar y cortar"
         respuesta <- readLn
         estado'' <- descartarCarta estado'
-        putStrLn $ mostrarMano estado''
         if respuesta == 2
             then jugar estado'' (turno) 1
         else
             jugar estado'' (turno+1) 0
       
     | otherwise = do
-        putStrLn $ "Mano Compu Antes: " ++ mostrarManoCompu computadora
         let estado' = jugadaComputadora estado
         let computadoraDespues = devolverComputadoraEstado estado'
         if puedeGanarComputadora computadoraDespues
@@ -149,6 +144,7 @@ jugar estado@(jugador, computadora, mazo, pilaDescartadas) turno corto
 
 levantarCarta :: EstadoDeJuego -> IO EstadoDeJuego
 levantarCarta estado = do
+    putStrLn $ "\n----------------------------------------------"
     putStrLn $ "\nTu mano: " ++ mostrarMano estado
     putStrLn $ "Que te gustaría hacer ahora?\n  1) tomar una carta desconocida\n  2) tomar la ultima carta descartada (" ++ (mostrarUltimaCartaDescartada estado) ++ ")"
     respuesta <- readLn
@@ -160,7 +156,6 @@ descartarCarta ((Jugador nombre mano s ss puntos), computadora, mazoRestante, pi
     putStrLn $ "\nTu mano: " ++ show mano
     putStrLn "Elegí una carta a descartar (1-8)"
     n <- readLn
-    -- VER COMO HACER PARA QUE NO TOME VALORES MENORES a 1 y MAYORES a 8
     let (mano', pilaDescartadas') = descartar mano n pilaDescartadas
     return ((Jugador nombre mano' s ss puntos), computadora, mazoRestante, pilaDescartadas')
 
@@ -168,7 +163,7 @@ descartarCarta ((Jugador nombre mano s ss puntos), computadora, mazoRestante, pi
 mostrarPuntajes :: Int -> Int -> IO ()
 mostrarPuntajes pJugador pComputadora = do
     putStrLn $ "\nPuntajes:"
-    putStrLn $ "-----------------------------"
+    putStrLn $ "------------------------------------------------------------------------------------------"
     putStrLn $ "Tu Puntaje: " ++ show pJugador
     putStrLn $ "\nPuntaje de la computadora: " ++ show pComputadora
-    putStrLn $ "=============================\n"
+    putStrLn $ "==========================================================================================\n"

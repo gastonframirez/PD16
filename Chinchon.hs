@@ -84,6 +84,7 @@ repartir (x:xs) = (x, xs)
 repartirCartaAJugador :: Mazo -> Jugador -> (Mazo, Jugador)
 repartirCartaAJugador [] _ = error "Mazo Vacio"
 repartirCartaAJugador m (Jugador nombre mano s ss puntos) =  let (carta, m') = repartir m
+    
                                                  in (m', Jugador nombre (carta:mano) s ss puntos)
 
 repartirNCartasAJugador :: Int -> Mazo -> Jugador -> (Mazo, Jugador)
@@ -175,7 +176,6 @@ puedeGanarComputadora (Jugador _ mano _ _ _) = puedeGanarMenosDiez mano || puede
 
 puedeGanarMenosDiez :: [Carta] -> Bool
 puedeGanarMenosDiez mano =  do
---                                        let combinacionesDe7 = combinacionesDeMano mano
                                         let buenasCombinaciones mano' = [ (cuatro, tres) | cuatro <- combinaciones 4 mano', let tres = mano' \\ cuatro, esBuena cuatro, esBuena tres]
                                         let  existeSolucion  = \m -> (length $ buenasCombinaciones m) >= 1
                                         any existeSolucion [mano]
@@ -350,7 +350,6 @@ cartaDesconocidaComputadora estado@(jugador, (Jugador nombre mano seguras ss pun
         let combElegida = if length [cartas | cartas <- posibles, cartasEnSecuencia cartas] >= 1 then last [cartas | cartas <- posibles, cartasEnSecuencia cartas] else last posibles
         let seguras' = removerDuplicados (seguras ++ combElegida)
         let ss' = [carta | carta <- ss, carta `notElem` seguras']
-        --        let sobrantes = [carta | carta <- mano', carta `notElem` (seguras' `union` ss)] -- TODAS LAS QUE NO ESTAN EN SEGURAS Y SS
         let sobrantes = (mano' \\ seguras') \\ ss'
         if length sobrantes > 0
         then do
@@ -361,7 +360,6 @@ cartaDesconocidaComputadora estado@(jugador, (Jugador nombre mano seguras ss pun
         let combPosibles = [tres | tres <- combinaciones 3 (mano'\\seguras)\\(combinaciones 2 ss), esBuena tres &&  cLevantada `elem` tres]
         if length combPosibles >=1
         then do
-            -- ACA NO ESTA SACANDO LA CARTA QUE SOBRA DE UN SS QUE PASA A SEGURA
             let combElegida = if length [cartas | cartas <- combPosibles, cartasEnSecuencia cartas] >= 1 then last [cartas | cartas <- combPosibles, cartasEnSecuencia cartas] else last combPosibles
             let seguras' = seguras ++ combElegida
             let ss' = [carta | carta <- ss, carta `notElem` seguras']
@@ -405,7 +403,6 @@ configurarComputadora (Jugador nombre mano seguras ss puntos) = do
     let difCombinaciones3 = sobrantes \\ todasCombinaciones3
     let sobrantes' = if length difCombinaciones3 >= 1 then difCombinaciones3 else sobrantes
     let seguras' = todasCombinaciones4 ++ todasCombinaciones3
-    -- DEBERIAMOS VER ESTO --> ME HIZO UN SSEGURAS DE 3
     let combinaciones2 = [carta | carta <- combinaciones 2 sobrantes', esSemiSegura carta]
     let ss' = removerDuplicados (concat combinaciones2)
     (Jugador nombre mano seguras' ss' puntos)
@@ -429,14 +426,9 @@ calcularPuntos (Jugador _ mano seguras _ puntos)
     -- IF DA MENOS 10 -> 0 porque es el que no corto
     | puedeGanarMenosDiez mano = 0
     | puedeGanarSobraUna mano = buscarCombinacionesRestoMasBajo mano
---    | tieneCinco mano = calcularRestoCombinaciones mano
     | otherwise = calcularRestoCombinaciones mano
 
      
---tieneCinco :: [Carta] -> [Carta]
---tieneCinco mano = do   
---    let combinacionesPosibles = [comb | comb <- combinaciones 5 mano, tieneNSuc comb 5]
---    length combinacionesPosibles >= 1
 
 calcularRestoCombinaciones :: [Carta] -> Int
 calcularRestoCombinaciones mano = do   
@@ -468,7 +460,7 @@ buscarCombinacionesRestoMasBajo mano =  do
                                         let buenasCombinaciones mano' = [ (tres, tres'') | tres <- combinaciones 3 mano',let tres' = mano' \\ tres, tres'' <- combinaciones 3 tres', esBuena tres, esBuena tres'']
                                         let restos mano' = concat [ (mano'\\tres)\\tres'' | tres <- combinaciones 3 mano',let tres' = mano' \\ tres, tres'' <- combinaciones 3 tres', esBuena tres, esBuena tres'']
                                         obtenerValorNumerico (head (ordenarCartasNumero (restos mano)))
---                                        
+
             
 ordernarCombinacionPuntaje :: [CombinacionPuntaje] -> [CombinacionPuntaje]
 ordernarCombinacionPuntaje = sortBy (comparing suma)
