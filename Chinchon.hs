@@ -125,55 +125,64 @@ shuffleIO :: [a] -> IO [a]
 shuffleIO xs = getStdRandom (shuffle' xs)
 
 
+-- Agarra la carta del mazo (para jugador)
 tomarCartaDesconocida :: EstadoDeJuego -> EstadoDeJuego
 tomarCartaDesconocida (jugador, computadora, mazo, pilaDescartadas) = (jugador', computadora, mazo', pilaDescartadas)
                         where (mazo', jugador') = repartirCartaAJugador mazo jugador
 
+-- Agarra la carta del mazo (para computadora)
 cartaDesconocida ::  [Carta] -> Carta
 cartaDesconocida [] = error "Mazo Vacio"
 cartaDesconocida mazoCartas = head mazoCartas
 
+
+
+-- Agarra la carta dada vuelta (para jugador)
 tomarUltimaCartaDescartada :: EstadoDeJuego -> EstadoDeJuego
 tomarUltimaCartaDescartada (jugador, computadora, mazo, pilaDescartadas) = (jugador', computadora, mazo, pilaDescartadas')
                         where (pilaDescartadas', jugador') = repartirCartaAJugador pilaDescartadas jugador
 
+-- Agarra la carta dada vuelta (para computadora)
 ultimaCartaDescartada :: [Carta] -> Carta
 ultimaCartaDescartada pilaDescartadas = head pilaDescartadas
-                        
+                    
+-- Muestra el valor de la ultima carta descartada                        
 mostrarUltimaCartaDescartada :: EstadoDeJuego -> String
 mostrarUltimaCartaDescartada (_, _, _, pilaDescartadas) = show $ head pilaDescartadas
 
+-- Muestra la mano del jugador
 mostrarMano :: EstadoDeJuego -> String
 mostrarMano ((Jugador _ mano _ _ _), _, _, _) = show mano
 
+-- Descarta la carta seleccionada por el jugador
 descartar :: Descartar
 descartar mano n mazo = let c = mano !! (n - 1) in (mano \\ [c], c:mazo)
 
 
---VER ESTOS --
 
+-- Genera las combinaciones de n cartas con las cartas dadas
 combinaciones :: Int -> [a] -> [[a]]
 combinaciones 0 _  = [[]]
 combinaciones n xs = [ y:ys | y:xs' <- tails xs, ys <- combinaciones (n-1) xs']
 
---VER ESTOS
 
---combinacionesDeMano :: Mano -> [Mano]
---combinacionesDeMano = combinaciones 7
-
+-- Controla que las combinaciones sean correctas respecto a las reglas
 esBuena :: [Carta] -> Bool
 esBuena cartas = cartasEnSecuencia cartas || cartasEnGrupo cartas
 
---VER ESTOS 
+-- Controla si el jugador tiene la posibilidad de cortar
 puedeGanar :: Jugador -> Bool
 puedeGanar (Jugador _ mano _ _ _) = puedeGanarMenosDiez mano || puedeGanarSobraUna mano
 
+-- Controla si la mano da la posibilidad de cortar (sin necesidad de enviar Jugador)
 noPuedeCortar :: [Carta] -> Bool
 noPuedeCortar mano = not (puedeGanar (Jugador "" mano [] [] 0))
 
+-- Controla si la computadora puede ganar
 puedeGanarComputadora :: Jugador -> Bool
 puedeGanarComputadora (Jugador _ mano _ _ _) = puedeGanarMenosDiez mano || puedeGanarSobraUnaComputadora mano
 
+-- Controla si tiene las combinaciones necesarias para ganar con menos diez
 puedeGanarMenosDiez :: [Carta] -> Bool
 puedeGanarMenosDiez mano =  do
                                         let buenasCombinaciones mano' = [ (cuatro, tres) | cuatro <- combinaciones 4 mano', let tres = mano' \\ cuatro, esBuena cuatro, esBuena tres]
@@ -193,8 +202,9 @@ puedeGanarSobraUnaComputadora mano =  do
                                         let restos mano' = concat [ (mano'\\tres)\\tres'' | tres <- combinaciones 3 mano',let tres' = mano' \\ tres, tres'' <- combinaciones 3 tres', esBuena tres, esBuena tres'']
                                         let restoMasBajo = head (ordenarCartasNumero (restos mano))
                                         let  existeSolucion  = \m -> ((length $ buenasCombinaciones m) >= 1 && (valor restoMasBajo) <= Dos )
-                                        any existeSolucion [mano]                            
--- Obtener por palo
+                                        any existeSolucion [mano]   
+                                                                 
+-- Obtener por las cartas de una palo determinado
 obtenerPorPalo :: Palo -> [Carta] -> [Carta]
 obtenerPorPalo paloParam cartas = filter (\carta -> palo carta == paloParam) cartas
 
@@ -220,7 +230,7 @@ esChinchon cartas =    tieneNSuc (ordenarCartasNumero cartas) 7
 ordenarCartasNumero :: [Carta] -> [Carta]
 ordenarCartasNumero = sortBy (comparing valor)
 
---
+-- ordenar las cartas por palo
 ordenarCartasPalo :: [Carta] -> [Carta]
 ordenarCartasPalo = sortBy (comparing palo)
 
@@ -228,14 +238,14 @@ ordenarCartasPalo = sortBy (comparing palo)
 ordenarTodasCartas :: [Carta] -> [Carta]
 ordenarTodasCartas cartas = ordenarCartasPalo (ordenarCartasNumero cartas)
 
-
+-- Controla si hay 3 o 4 cartas del mismo valor
 cartasEnGrupo :: [Carta] -> Bool
 cartasEnGrupo [(Carta n1 _), (Carta n2 _), (Carta n3 _)] = n1 == n2 && n1 == n3
 cartasEnGrupo [(Carta n1 _), (Carta n2 _), (Carta n3 _), (Carta n4 _)] = n1 == n2 && n1 == n3 && n1 == n4
 cartasEnGrupo _ = False
 
 
--- Secuencia
+-- Controla si hay 3 o 4 cartas del mismo palo con valores consecutivos
 cartasEnSecuencia :: [Carta] -> Bool
 cartasEnSecuencia [(Carta n1 p1), (Carta n2 p2), (Carta n3 p3)] = mismoPalo && enSecuencia
         where 
@@ -249,23 +259,27 @@ cartasEnSecuencia [(Carta n1 p1), (Carta n2 p2), (Carta n3 p3), (Carta n4 p4)] =
             ordenado = map fromEnum $ sort [n1, n2, n3,n4]
 cartasEnSecuencia _ = False
 
+-- controla si las cartas generan algun conjunto de 2 cartas que puede convertirse en una combinacion para ganar
 esSemiSegura :: [Carta] -> Bool
 esSemiSegura cartas = esSemiSeguraPalo cartas || esSemiSeguraNumero cartas
 
+
+-- controla que las cartas sean consecutivas y del mismo palo
 esSemiSeguraPalo :: [Carta] -> Bool
 esSemiSeguraPalo cartas = do
     let cartas' = ordenarCartasNumero cartas
     tieneNSuc cartas' 2 
 
+-- controla que las cartas sean del mismo valor
 esSemiSeguraNumero :: [Carta] -> Bool
 esSemiSeguraNumero [(Carta n1 _), (Carta n2 _)] = n1 == n2
 
-
+-- Saca un item
 removeItem _ []                 = []
 removeItem x (y:ys) | x == y    = removeItem x ys
                     | otherwise = y : removeItem x ys
                     
-
+-- AI de la computadora
 jugadaComputadora :: EstadoDeJuego -> EstadoDeJuego
 jugadaComputadora estado@(jugador, (Jugador nombre mano seguras ss puntos), mazo, pilaDescartadas) = do
 --     VER SI LA DE DESCARTADA SIRVE
@@ -304,7 +318,7 @@ jugadaComputadora estado@(jugador, (Jugador nombre mano seguras ss puntos), mazo
                 descartarDeSemiSeguras (jugador, (Jugador nombre mano' seguras' ss'' puntos), mazo, pilaDescartadas') cLevantada
         else cartaDesconocidaComputadora (estado) 
     
-    
+-- descarta una carta de las que no corresponden a ninguna combinacion
 descartarSobrante :: EstadoDeJuego -> [Carta]-> EstadoDeJuego
 descartarSobrante estado@(jugador, (Jugador nombre mano seguras ss puntos), mazo, pilaDescartadas) sobrantes = do
     let cartasOrdenadas = ordenarCartasNumero sobrantes
@@ -314,7 +328,7 @@ descartarSobrante estado@(jugador, (Jugador nombre mano seguras ss puntos), mazo
     let computadora' = (Jugador nombre mano' seguras ss puntos)
     (jugador, computadora', mazo, pilaDescartadas')
     
-    
+-- si no hay ninguna carta que no corresponda a una combinacion, entonces descarta una de las combinaciones de 2 cartas   
 descartarDeSemiSeguras ::  EstadoDeJuego -> Carta -> EstadoDeJuego
 descartarDeSemiSeguras estado@(jugador, (Jugador nombre mano seguras ss puntos), mazo, pilaDescartadas) cLevantada = do    
     if length ss >= 1 then do
@@ -339,6 +353,8 @@ descartarDeSemiSeguras estado@(jugador, (Jugador nombre mano seguras ss puntos),
         let computadora' = (Jugador nombre mano' seguras' ss' 15)
         (jugador, computadora', mazo, pilaDescartadas')    
     
+    
+-- AI de la computadora para cuando la carta dada vuelta no sirve
 cartaDesconocidaComputadora :: EstadoDeJuego -> EstadoDeJuego
 cartaDesconocidaComputadora estado@(jugador, (Jugador nombre mano seguras ss puntos), mazo, pilaDescartadas) = do
     let cLevantada = cartaDesconocida mazo
@@ -391,7 +407,7 @@ cartaDesconocidaComputadora estado@(jugador, (Jugador nombre mano seguras ss pun
                 descartarDeSemiSeguras (jugador, (Jugador nombre mano' seguras ss' puntos), mazo', pilaDescartadas) cLevantada
             
                         
-    
+-- Arma las combinaciones y pone esas combinaciones en sus respectivos arrays para el AI de la computadora    
 configurarComputadora :: Jugador -> Jugador
 configurarComputadora (Jugador nombre mano seguras ss puntos) = do
     let combinaciones4 = [carta | carta <- combinaciones 4 mano, esBuena carta]
@@ -407,20 +423,21 @@ configurarComputadora (Jugador nombre mano seguras ss puntos) = do
     let ss' = removerDuplicados (concat combinaciones2)
     (Jugador nombre mano seguras' ss' puntos)
 
-
+-- remueve duplicados dentro de un array
 removerDuplicados :: Eq a => [a] -> [a]
 removerDuplicados = foldl (\visto x -> if x `elem` visto
     then visto
     else visto ++ [x]) []
     
-    
+-- muestra la mano de la computadora    
 mostrarManoCompu :: Jugador -> String
 mostrarManoCompu (Jugador _ mano _ _ _) = show mano
 
+-- Devuelve el estado de la computadora
 devolverComputadoraEstado :: EstadoDeJuego -> Jugador
 devolverComputadoraEstado (_, computadora, _, _) = computadora
 
-
+-- Calcula los puntos de un juegador al finalizar una ronda
 calcularPuntos :: Jugador -> Int
 calcularPuntos (Jugador _ mano seguras _ puntos)
     -- IF DA MENOS 10 -> 0 porque es el que no corto
@@ -429,7 +446,7 @@ calcularPuntos (Jugador _ mano seguras _ puntos)
     | otherwise = calcularRestoCombinaciones mano
 
      
-
+-- Calcula los puntos cunado no hay menos diez o sobra solo una carta
 calcularRestoCombinaciones :: [Carta] -> Int
 calcularRestoCombinaciones mano = do   
     let mano' = ordenarCartasNumero mano
@@ -441,6 +458,7 @@ calcularRestoCombinaciones mano = do
     else
         calcularDependiendoCombinacion mano 4
 
+-- calcula el menor puntaje dependiendo las combinaciones
 calcularDependiendoCombinacion :: [Carta] -> Int -> Int
 calcularDependiendoCombinacion mano 2 = sum (map obtenerValorNumerico mano)
 calcularDependiendoCombinacion mano nCartas = do
@@ -454,14 +472,15 @@ calcularDependiendoCombinacion mano nCartas = do
         sum (map obtenerValorNumerico (mano\\combinacionMayor))
     else
         calcularDependiendoCombinacion mano (nCartas-1)
-        
+  
+-- calcula el menor puntaje dependiendo las combinaciones 
 buscarCombinacionesRestoMasBajo :: [Carta] -> Int
 buscarCombinacionesRestoMasBajo mano =  do
                                         let buenasCombinaciones mano' = [ (tres, tres'') | tres <- combinaciones 3 mano',let tres' = mano' \\ tres, tres'' <- combinaciones 3 tres', esBuena tres, esBuena tres'']
                                         let restos mano' = concat [ (mano'\\tres)\\tres'' | tres <- combinaciones 3 mano',let tres' = mano' \\ tres, tres'' <- combinaciones 3 tres', esBuena tres, esBuena tres'']
                                         obtenerValorNumerico (head (ordenarCartasNumero (restos mano)))
 
-            
+-- ordena las combinaciones dependiendpo del puntaje                
 ordernarCombinacionPuntaje :: [CombinacionPuntaje] -> [CombinacionPuntaje]
 ordernarCombinacionPuntaje = sortBy (comparing suma)
 

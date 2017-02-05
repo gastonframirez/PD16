@@ -12,6 +12,7 @@ main = do
     estadoInicial <- configurar
     jugar estadoInicial 1 0
 
+-- configura el juego para iniciar 
 configurar :: IO (EstadoDeJuego)
 configurar = do
     -- mezclar cartas
@@ -32,7 +33,7 @@ configurar = do
     mostrarPuntajes 0 0
     return (jugador'', computadora'', mazoAux, pilaDescartada)
 
-
+-- Se utiliza para repartir las cartas luego de la primera ronda
 reConfigurar :: Jugador -> Jugador -> IO (EstadoDeJuego)
 reConfigurar (Jugador nombreJugador _ _ _ puntosJugador) computadoraEst@(Jugador nombreComputadora manoComputadora _ _ puntosComputadora) = do
     -- mezclar cartas
@@ -52,11 +53,12 @@ reConfigurar (Jugador nombreJugador _ _ _ puntosJugador) computadoraEst@(Jugador
     return (jugador'', computadora'', mazoAux, pilaDescartada)
 
 
-
+-- controla si numero es par o impar, se usa para determinar a quien le toca jugar
 esPar :: Int -> Bool
 esPar 0 = True
 esPar n = n `rem` 2 == 0
 
+-- juego
 jugar :: EstadoDeJuego -> Int -> Int -> IO ()
 jugar estado@(jugador, computadora, mazo, pilaDescartadas) turno corto 
     | length mazo == 0 = do
@@ -141,7 +143,7 @@ jugar estado@(jugador, computadora, mazo, pilaDescartadas) turno corto
         then  jugar estado' (turno) 2
         else jugar estado' (turno+1) 0
 
-
+-- le pregunta al usuario que carta quiere levantar
 levantarCarta :: EstadoDeJuego -> IO EstadoDeJuego
 levantarCarta estado = do
     putStrLn $ "\n----------------------------------------------"
@@ -150,7 +152,7 @@ levantarCarta estado = do
     respuesta <- readLn
     return $ (if respuesta == 1 then tomarCartaDesconocida estado else tomarUltimaCartaDescartada estado)
 
-
+-- le pregunta al usuario que carta quiere descartar
 descartarCarta :: EstadoDeJuego -> IO EstadoDeJuego
 descartarCarta ((Jugador nombre mano s ss puntos), computadora, mazoRestante, pilaDescartadas) = do
     putStrLn $ "\nTu mano: " ++ show mano
@@ -159,7 +161,7 @@ descartarCarta ((Jugador nombre mano s ss puntos), computadora, mazoRestante, pi
     let (mano', pilaDescartadas') = descartar mano n pilaDescartadas
     return ((Jugador nombre mano' s ss puntos), computadora, mazoRestante, pilaDescartadas')
 
-
+-- muestra los puntajes al final de cada ronda
 mostrarPuntajes :: Int -> Int -> IO ()
 mostrarPuntajes pJugador pComputadora = do
     putStrLn $ "\nPuntajes:"
