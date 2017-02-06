@@ -1,6 +1,6 @@
 # Trabajo Final: Programación Declarativa UBP '16
 
-Juego de Cartas _Chinchón_ en **Haskell*
+Juego de Cartas _Chinchón_ en **Haskell**
 
 ## Descripción del Proyecto 
 
