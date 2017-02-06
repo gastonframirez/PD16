@@ -350,7 +350,7 @@ descartarDeSemiSeguras estado@(jugador, (Jugador nombre mano seguras ss puntos),
         let seguras' = seguras \\ (head combinacionCLevantada)
         let ss' = ss ++ ((head combinacionCLevantada) \\ [cLevantada])
         let mano' = [carta | carta <- mano, not (carta == cLevantada)]
-        let computadora' = (Jugador nombre mano' seguras' ss' 15)
+        let computadora' = (Jugador nombre mano' seguras' ss' puntos)
         (jugador, computadora', mazo, pilaDescartadas')    
     
     
