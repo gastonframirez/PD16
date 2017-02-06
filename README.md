@@ -93,3 +93,8 @@ Nuestro objetivo para este proyecto era poder practicar y perfeccionar lo aprend
 En un principio al elegir el "Chinchon", creímos que no representaría grandes problemas de programación, que con tan sólo encontrar escaleras y grupos del mismo número se resolvería. Un par de funciones **sort** y **`elem`** lo resolverían junto con las famosas map y filter, pero eso estaba lejos de ser verdad. Mientras la programación avanzaba, nos dimos cuenta cómo cada vez que había que decidir que carta levantar, toda la estrategia podía llegar a cambiar, y esto podía cambiar incluso ronda tras ronda. Esto genero un desafío no sólo del lenguaje sino también de AI, en el que tuvimos que pensar en todos los escenarios posibles con cada carta elegida.
 
 Finalmente, logramos conseguir nuestro jugador "ideal" (la computadora), que pudiera pensar como un humano, analizando qué le conviene y qué no, y cuál sería su mejor estrategia para terminar el juego con el mejor puntaje posible.
+
+## Referencias
+
+Para mezclar el mazo de cartas en la función Shuffle' de [Chinchon.hs](https://github.com/gastonframirez/PD16/blob/master/Chinchon.hs#L100-L125) usamos la función Shuffle' extraída de la siguiente referencia:
+https://wiki.haskell.org/Random_shuffle
