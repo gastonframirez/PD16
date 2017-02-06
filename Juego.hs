@@ -69,11 +69,11 @@ jugar estado@(jugador, computadora, mazo, pilaDescartadas) turno corto
         putStrLn $ "No podés cortar todavia! Intentá cuando tengas combinaciones.\n"
         jugar estado (turno+1) 0
     | corto == 2 && noPuedeCortar (mano computadora) = jugar estado (turno+1) 0
-    | (puntos jugador > puntajeMaximo) && (puntos computadora < puntajeMaximo) = putStrLn $ "Perdiste! La computadora ganó el juego con Chinchón! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
-    | (puntos jugador < puntajeMaximo) && (puntos computadora > puntajeMaximo) = putStrLn $ "Ganaste con Chinchón! La computadora perdió el juego! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
+    | (puntos jugador > puntajeMaximo) && (puntos computadora < puntajeMaximo) = putStrLn $ "Perdiste! La computadora ganó el juego! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
+    | (puntos jugador < puntajeMaximo) && (puntos computadora > puntajeMaximo) = putStrLn $ "Ganaste! La computadora perdió el juego! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
     | (puntos jugador > puntajeMaximo) && (puntos computadora > puntajeMaximo) && (puntos jugador > puntos computadora) = putStrLn $ "Perdiste! La computadora ganó el juego! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
     | (puntos jugador > puntajeMaximo) && (puntos computadora > puntajeMaximo) && not (puntos jugador > puntos computadora) = putStrLn $ "Ganaste! La computadora perdió el juego! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
-    | corto == 1 &&  esChinchon (mano jugador) = putStrLn $ "Ganaste! La computadora perdió el juego! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora + puntajeMaximo)
+    | corto == 1 &&  esChinchon (mano jugador) = putStrLn $ "Ganaste con Chinchon! La computadora perdió el juego! \nTus puntos: " ++ show (puntos jugador) ++ "\nPuntos de la computadora: " ++ show (puntos computadora + puntajeMaximo)
     | corto == 1 && puedeGanarMenosDiez (mano jugador) = do
         putStrLn $ "Ganaste la ronda con menos 10! " ++ mostrarMano estado
         let puntosComputadora = calcularPuntos computadora
@@ -100,7 +100,7 @@ jugar estado@(jugador, computadora, mazo, pilaDescartadas) turno corto
         estado' <- reConfigurar jugador' computadora'
         jugar estado' turno 0   
 
-    | corto == 2 &&  esChinchon (mano computadora) = putStrLn $ "Perdiste! La computadora ganó el juego! \nTus puntos: " ++ show (puntos jugador + puntajeMaximo) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
+    | corto == 2 &&  esChinchon (mano computadora) = putStrLn $ "Perdiste! La computadora ganó el juego con Chinchon! \nTus puntos: " ++ show (puntos jugador + puntajeMaximo) ++ "\nPuntos de la computadora: " ++ show (puntos computadora)
     | corto == 2 && puedeGanarMenosDiez (mano computadora) = do
         putStrLn $ "Computadora gano la ronda, con menos 10! "
         let puntosComputadora = calcularPuntos computadora
